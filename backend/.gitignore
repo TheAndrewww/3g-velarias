@@ -13,12 +13,12 @@ logs/
 npm-debug.log*
 
 # Uploaded files
-uploads/
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.webp
+# uploads/  # Comentado temporalmente para subir imágenes iniciales a producción
+# *.jpg
+# *.jpeg
+# *.png
+# *.gif
+# *.webp
 
 # Database (si migras a SQLite)
 *.db
