@@ -106,6 +106,15 @@ if (typeof module !== 'undefined' && module.exports) {
 
 // Routes
 
+// Get Config (for admin panel)
+app.get('/api/config', (req, res) => {
+    res.json({
+        frontendUrl: FRONTEND_URL,
+        backendUrl: process.env.BACKEND_URL || `http://localhost:${PORT}`,
+        nodeEnv: NODE_ENV
+    });
+});
+
 // Get All Projects
 app.get('/api/projects', (req, res) => {
     try {

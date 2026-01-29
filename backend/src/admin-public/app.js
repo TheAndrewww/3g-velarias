@@ -31,13 +31,32 @@ const CATEGORIES = {
 };
 
 // --- Initialization ---
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadConfig();
     fetchProjects();
     setupImageHandlers();
     setupSearchAndFilters();
     initMap();
     setupLogout();
 });
+
+// Load configuration from backend
+async function loadConfig() {
+    try {
+        const res = await fetch('/api/config');
+        const config = await res.json();
+        window.FRONTEND_URL = config.frontendUrl || 'http://localhost:5173';
+    } catch (error) {
+        console.error('Error loading config:', error);
+        window.FRONTEND_URL = 'http://localhost:5173';
+    }
+
+    // Initialize the view website button with correct URL
+    const viewWebsiteBtn = document.getElementById('view-website-btn');
+    if (viewWebsiteBtn) {
+        viewWebsiteBtn.href = window.FRONTEND_URL + '/residencial/';
+    }
+}
 
 // Hacer switchTab global para onclick en HTML
 window.switchTab = function(tab) {
@@ -50,11 +69,11 @@ window.switchTab = function(tab) {
     if (tab === 'industrial') {
         document.body.classList.add('dark-theme');
         logo.src = '/admin/assets/Logo-sin-salmo.svg';
-        viewWebsiteBtn.href = 'http://localhost:5173/industrial/';
+        viewWebsiteBtn.href = window.FRONTEND_URL + '/industrial/';
     } else {
         document.body.classList.remove('dark-theme');
         logo.src = '/admin/assets/residencial/logo.svg';
-        viewWebsiteBtn.href = 'http://localhost:5173/residencial/';
+        viewWebsiteBtn.href = window.FRONTEND_URL + '/residencial/';
     }
 
     // Update Tabs UI
