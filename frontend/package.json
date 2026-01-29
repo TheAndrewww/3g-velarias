@@ -1,0 +1,12 @@
+{
+  "name": "3g-velarias-frontend",
+  "version": "1.0.0",
+  "description": "Frontend estático para 3G Velarias - Arquitectura Textil",
+  "scripts": {
+    "dev": "python3 -m http.server 5173 --directory public",
+    "preview": "python3 -m http.server 8080 --directory public"
+  },
+  "keywords": ["3g-velarias", "frontend", "static"],
+  "author": "",
+  "license": "MIT"
+}

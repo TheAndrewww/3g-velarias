@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3G Velarias | Arquitectura Textil</title>
+    <meta name="description"
+        content="Especialistas en Velarias, Pérgolas y Cubiertas Tensadas. Soluciones Residenciales e Industriales de alta calidad en México.">
+    <link rel="icon" type="image/svg+xml" href="Logo-3G.svg">
+    <link rel="canonical" href="https://3gvelarias.com/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://3gvelarias.com/">
+    <meta property="og:title" content="3G Velarias | Arquitectura Textil">
+    <meta property="og:description"
+        content="Especialistas en Velarias, Pérgolas y Cubiertas Tensadas. Soluciones Residenciales e Industriales de alta calidad en México.">
+    <meta property="og:image" content="https://3gvelarias.com/Logo-3G.svg">
+
+    <!-- Preload Critical Images (LCP) -->
+    <link rel="preload" as="image"
+        href="https://images.unsplash.com/photo-1628624747186-a941c476b7ef?q=80&w=2070&auto=format&fit=crop">
+    <link rel="preload" as="image"
+        href="https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80">
+
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-primary: #C41E3A;
+            --color-dark: #0f0f0f;
+            --color-light: #ffffff;
+            --color-gray: #f8f8f8;
+            /* Smoother easing for better feel */
+            --transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            background: #000;
+        }
+
+        /* Moving Divider Container */
+        .divider-container {
+            position: relative;
+            width: 0;
+            height: 100%;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* It will move naturally as flex siblings resize */
+        }
+
+        /* Logo inside moving divider */
+        .logo-container {
+            position: absolute;
+            background: #555555;
+            /* Default Gray State */
+            padding: 30px;
+            border-radius: 50%;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+            width: 200px;
+            /* Large size */
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.4s ease;
+            /* Added background transition */
+            overflow: hidden;
+            /* Ensure images stay inside */
+        }
+
+        .logo-container img {
+            width: 90%;
+            height: auto;
+            position: absolute;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            opacity: 0;
+            /* Default hidden */
+        }
+
+        /* Default State (No hover classes) */
+        .logo-container:not(.state-res):not(.state-ind) .logo-default {
+            opacity: 1;
+        }
+
+        /* Residential State */
+        .logo-container.state-res {
+            background-color: #ffffff;
+            transform: rotate(-5deg) scale(1.1);
+        }
+
+        .logo-container.state-res .logo-res {
+            opacity: 1;
+        }
+
+        /* Industrial State */
+        .logo-container.state-ind {
+            background-color: #1a1a1a;
+            transform: rotate(5deg) scale(1.1);
+        }
+
+        .logo-container.state-ind .logo-ind {
+            opacity: 1;
+        }
+
+        /* Page Transition Overlay */
+        .page-transition {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 100px;
+            height: 100px;
+            margin-left: -50px;
+            margin-top: -50px;
+            border-radius: 50%;
+            z-index: 9999;
+            pointer-events: none;
+            transform: scale(0);
+            will-change: transform;
+        }
+
+        .page-transition.active {
+            animation: circleExpand 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        @keyframes circleExpand {
+            0% {
+                transform: scale(0);
+            }
+
+            100% {
+                transform: scale(150);
+            }
+        }
+
+        /* Split Section */
+        .split {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-decoration: none;
+            transition: var(--transition);
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        /* Background Images */
+        .split::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            transition: var(--transition);
+            z-index: 1;
+        }
+
+        /* Hover Overlay Effect */
+        .split::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            transition: var(--transition);
+            opacity: 0;
+        }
+
+        /* === RESIDENCIAL SIDE (Light/Clean) === */
+        .left {
+            background-color: var(--color-light);
+            color: var(--color-dark);
+        }
+
+        .left::before {
+            background-image: url('https://images.unsplash.com/photo-1628624747186-a941c476b7ef?q=80&w=2070&auto=format&fit=crop');
+            opacity: 0.5;
+            transform: scale(1.05);
+        }
+
+        .left h2 {
+            color: var(--color-primary);
+        }
+
+        /* Hover State Left */
+        .left:hover::before {
+            transform: scale(1);
+            opacity: 0.8;
+            filter: brightness(1.1);
+        }
+
+        .left .btn {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+            box-shadow: 0 4px 15px rgba(196, 30, 58, 0.2);
+        }
+
+        .left:hover .btn {
+            background: #a01830;
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(196, 30, 58, 0.3);
+        }
+
+        /* === INDUSTRIAL SIDE (Dark/Engineering/Grid) === */
+        .right {
+            background-color: var(--color-dark);
+            color: white;
+        }
+
+        /* Industrial Grid Pattern Overlay */
+        .right-bg-overlay {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .right::before {
+            background-image: url('https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            opacity: 0.3;
+            transform: scale(1.05);
+            filter: grayscale(100%);
+        }
+
+        .right h2 {
+            color: #ccc;
+        }
+
+        /* Hover State Right */
+        .right:hover::before {
+            transform: scale(1);
+            opacity: 0.6;
+            filter: grayscale(0%);
+        }
+
+        .right .btn {
+            background: transparent;
+            color: white;
+            border-color: white;
+        }
+
+        .right:hover .btn {
+            background: white;
+            color: var(--color-dark);
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Split Interaction */
+        .split:hover {
+            flex: 2;
+            /* Much wider expansion to push logo */
+        }
+
+        .container:hover .split:not(:hover) {
+            filter: blur(2px);
+            opacity: 0.8;
+        }
+
+        /* Content Styles */
+        .content {
+            position: relative;
+            z-index: 3;
+            text-align: center;
+            padding: 2rem;
+            transition: var(--transition);
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+            margin-bottom: 0.5rem;
+            line-height: 1;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 1.2rem 3.5rem;
+            border: 2px solid;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 1rem;
+            border-radius: 6px;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        /* Intro Animation */
+        @keyframes entrance {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        body {
+            animation: entrance 1.5s ease-out;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .divider-container {
+                width: 100%;
+                height: 0;
+            }
+
+            .split {
+                flex: 1 !important;
+            }
+
+            /* Logo slightly smaller on mobile, moves vertically */
+            .logo-container {
+                width: 120px;
+                height: 120px;
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 3rem;
+            }
+
+            h2 {
+                margin-bottom: 1.5rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Left Side: Residencial -->
+    <a href="residencial/index.html" class="split left" data-color="#ffffff">
+        <div class="content">
+            <h2>Hogar & Jardín</h2>
+            <h1>Residencial</h1>
+            <div class="btn">Entrar</div>
+        </div>
+    </a>
+
+    <!-- Moving Divider with Logo -->
+    <div class="divider-container">
+        <div class="logo-container">
+            <!-- Stacked Logos for Smooth Cross-fade -->
+            <img src="industrial/logo.svg" alt="3G Velarias" class="logo-default" width="200" height="200">
+            <img src="residencial/logo.svg" alt="Residencial" class="logo-res" width="200" height="200">
+            <img src="industrial/logo.svg" alt="Industrial" class="logo-ind" width="200" height="200">
+        </div>
+    </div>
+
+    <!-- Right Side: Industrial -->
+    <a href="industrial/index.html" class="split right" data-color="#0f0f0f">
+        <!-- Grid Pattern Overlay -->
+        <div class="right-bg-overlay"></div>
+
+        <div class="content">
+            <h2>Naves & Proyectos</h2>
+            <h1>Industrial</h1>
+            <div class="btn">Entrar</div>
+        </div>
+    </a>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const splits = document.querySelectorAll('.split');
+            const logoContainer = document.querySelector('.logo-container');
+
+            const leftSplit = document.querySelector('.split.left');
+            const rightSplit = document.querySelector('.split.right');
+
+            // --- Hover Effects (Class Switching) ---
+
+            // Hover Residential (Left)
+            leftSplit.addEventListener('mouseenter', () => {
+                logoContainer.classList.add('state-res');
+                logoContainer.classList.remove('state-ind');
+            });
+
+            // Hover Industrial (Right)
+            rightSplit.addEventListener('mouseenter', () => {
+                logoContainer.classList.remove('state-res');
+                logoContainer.classList.add('state-ind');
+            });
+
+            // Mouse Leave (Reset)
+            [leftSplit, rightSplit].forEach(split => {
+                split.addEventListener('mouseleave', () => {
+                    logoContainer.classList.remove('state-res');
+                    logoContainer.classList.remove('state-ind');
+                });
+            });
+
+            // --- Navigation Logic ---
+            splits.forEach(split => {
+                split.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetUrl = this.getAttribute('href');
+                    const targetColor = this.getAttribute('data-color');
+
+                    // Create transition overlay
+                    const overlay = document.createElement('div');
+                    overlay.className = 'page-transition';
+                    overlay.style.backgroundColor = targetColor;
+                    document.body.appendChild(overlay);
+
+                    // Trigger animation
+                    requestAnimationFrame(() => {
+                        overlay.classList.add('active');
+                    });
+
+                    // Navigate
+                    setTimeout(() => {
+                        window.location.href = targetUrl;
+                    }, 800);
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
