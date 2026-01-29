@@ -6,7 +6,7 @@
 // Backend API URL configuration
 const API_BASE_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:3001'
-    : 'https://your-backend-url.com'; // Cambiar en producción
+    : 'https://3g-velarias-production.up.railway.app';
 
 // Helper function to get absolute image URL
 function getImageUrl(imagePath) {
