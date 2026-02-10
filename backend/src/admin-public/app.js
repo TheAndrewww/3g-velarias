@@ -1,5 +1,5 @@
 let currentTab = 'residential'; // 'residential' or 'industrial'
-let editIndex = null; // Track if we are editing
+let editProjectId = null; // Track the DB ID if we are editing
 let projects = { residentialProjects: [], industrialProjects: [] };
 
 let currentImages = []; // Array of mixed types: (String | File)
@@ -200,10 +200,10 @@ async function saveProject(e) {
             }
         }
 
-        const url = editIndex !== null
-            ? `/api/projects/${editIndex}?type=${currentTab}`
+        const url = editProjectId !== null
+            ? `/api/projects/${editProjectId}?type=${currentTab}`
             : `/api/projects?type=${currentTab}`;
-        const method = editIndex !== null ? 'PUT' : 'POST';
+        const method = editProjectId !== null ? 'PUT' : 'POST';
 
         const saveRes = await fetch(url, {
             method: method,
@@ -221,7 +221,7 @@ async function saveProject(e) {
         if (saveData.success) {
             closeModal();
             fetchProjects();
-            alert(editIndex !== null ? '¡Proyecto actualizado!' : '¡Proyecto guardado!');
+            alert(editProjectId !== null ? '¡Proyecto actualizado!' : '¡Proyecto guardado!');
         }
     } catch (err) {
         console.error('Error:', err);
@@ -231,11 +231,11 @@ async function saveProject(e) {
 
 form.addEventListener('submit', saveProject);
 
-async function deleteProject(index) {
+async function deleteProject(projectId) {
     if (!confirm('¿Estás seguro de eliminar este proyecto?')) return;
 
     try {
-        const res = await fetch(`/api/projects/${index}?type=${currentTab}`, {
+        const res = await fetch(`/api/projects/${projectId}?type=${currentTab}`, {
             method: 'DELETE',
             credentials: 'include'
         });
@@ -282,7 +282,7 @@ function renderProjects() {
 
         const card = document.createElement('div');
         card.className = 'bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden border border-gray-100 group cursor-pointer';
-        card.onclick = () => editProject(index);
+        card.onclick = () => editProject(project.id);
 
         let imgDisplayUrl = project.image;
         if (!imgDisplayUrl.startsWith('http')) {
@@ -304,12 +304,12 @@ function renderProjects() {
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     ${project.location}
                 </p>
-                
+
                 <div class="flex justify-between items-center pt-4 border-t border-gray-100">
                     <span class="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-1 rounded">${project.area}</span>
                     <div class="flex gap-2">
-                        <button onclick="editProject(${index})" class="hidden">Editar</button>
-                        <button onclick="event.stopPropagation(); deleteProject(${index})" class="text-red-500 hover:text-red-700 text-sm font-medium hover:underline">Eliminar</button>
+                        <button onclick="editProject(${project.id})" class="hidden">Editar</button>
+                        <button onclick="event.stopPropagation(); deleteProject(${project.id})" class="text-red-500 hover:text-red-700 text-sm font-medium hover:underline">Eliminar</button>
                     </div>
                 </div>
             </div>
@@ -320,10 +320,10 @@ function renderProjects() {
 
 // --- Modal & Form Logic ---
 
-function editProject(index) {
-    editIndex = index;
+function editProject(projectId) {
+    editProjectId = projectId;
     const list = currentTab === 'residential' ? projects.residentialProjects : projects.industrialProjects;
-    const project = list[index];
+    const project = list.find(p => p.id === projectId);
 
     openModal(true); // true = editing mode
 
@@ -358,7 +358,7 @@ function editProject(index) {
 // Hacer openModal global para onclick en HTML
 window.openModal = function(isEdit = false) {
     if (!isEdit) {
-        editIndex = null;
+        editProjectId = null;
         form.reset();
         currentImages = [];
         renderGallery();
