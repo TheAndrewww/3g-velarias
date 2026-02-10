@@ -5,19 +5,88 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Google Tag Manager / Analytics Placeholder -->
-    <!-- Put your GTM-XXXX or G-XXXX ID here -->
+    <!-- Google Tag Manager -->
+    <script>(function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({
+                'gtm.start':
+                    new Date().getTime(), event: 'gtm.js'
+            }); var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                    'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-5SSKTHPT');</script>
+    <!-- End Google Tag Manager -->
+
+    <script>
+        // Event Tracking for 3G Velarias (pushes to GTM dataLayer)
+        document.addEventListener('DOMContentLoaded', function () {
+            // 1. WhatsApp Clicks
+            document.querySelectorAll('a[href*="wa.me"]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    window.dataLayer = window.dataLayer || [];
+                    window.dataLayer.push({
+                        'event': 'contact_whatsapp',
+                        'category': 'Contact',
+                        'label': 'WhatsApp Click',
+                        'page_type': 'residential'
+                    });
+                });
+            });
+
+            // 2. Phone Calls
+            document.querySelectorAll('a[href^="tel:"]').forEach(link => {
+                link.addEventListener('click', () => {
+                    window.dataLayer = window.dataLayer || [];
+                    window.dataLayer.push({
+                        'event': 'contact_phone',
+                        'category': 'Contact',
+                        'label': link.getAttribute('href').replace('tel:', ''),
+                        'page_type': 'residential'
+                    });
+                });
+            });
+
+            // 3. Email Clicks
+            document.querySelectorAll('a[href^="mailto:"]').forEach(link => {
+                link.addEventListener('click', () => {
+                    window.dataLayer = window.dataLayer || [];
+                    window.dataLayer.push({
+                        'event': 'contact_email',
+                        'category': 'Contact',
+                        'label': 'Email Click',
+                        'page_type': 'residential'
+                    });
+                });
+            });
+
+            // 4. Form Submissions
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', () => {
+                    window.dataLayer = window.dataLayer || [];
+                    window.dataLayer.push({
+                        'event': 'form_start',
+                        'category': 'Form',
+                        'label': form.getAttribute('id') || 'Contact Form',
+                        'page_type': 'residential'
+                    });
+                });
+            });
+        });
+    </script>
+
+
+
+
     <meta name="description"
         content="Cotización Gratis en Velarias y Pérgolas Residenciales. Precios directos de fábrica, diseño 3D y garantía por escrito. ¡Transforma tu hogar hoy!">
     <title>3G Velarias | Cubiertas y Pérgolas Residenciales - Cotiza Gratis</title>
     <link rel="icon" type="image/svg+xml" href="icono-residencial.svg">
 
     <!-- Canonical -->
-    <link rel="canonical" href="https://www.3gvelarias.com/residencial/index.html">
+    <link rel="canonical" href="https://www.3gvelarias.com/residencial/">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://www.3gvelarias.com/residencial/index.html">
+    <meta property="og:url" content="https://www.3gvelarias.com/residencial/">
     <meta property="og:title" content="3G Velarias | Cubiertas y Pérgolas para tu Hogar">
     <meta property="og:description"
         content="Soluciones premium en velarias para cochera, jardín y terraza. Diseño arquitectónico y materiales de larga duración.">
@@ -25,7 +94,7 @@
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://www.3gvelarias.com/residencial/index.html">
+    <meta property="twitter:url" content="https://www.3gvelarias.com/residencial/">
     <meta property="twitter:title" content="3G Velarias | Cubiertas y Pérgolas para tu Hogar">
     <meta property="twitter:description"
         content="Soluciones premium en velarias para cochera, jardín y terraza. Diseño arquitectónico y materiales de larga duración.">
@@ -36,30 +105,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Schema Markup (LocalBusiness) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "LocalBusiness",
-      "name": "3G Velarias - Residencial",
-      "image": "https://3gvelarias.com/Logo-3G.svg",
-      "telephone": "+524621490313",
-      "email": "ventas@arquitecturatextil3g.com",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "Paseo de la Altiplanicie 280",
-        "addressLocality": "Irapuato",
-        "addressRegion": "GTO",
-        "postalCode": "36670",
-        "addressCountry": "MX"
-      },
-      "url": "https://3gvelarias.com/residencial/",
-      "priceRange": "$$"
-    }
     </script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
     <link rel="stylesheet" href="styles.css">
     <script type="application/ld+json">
     {
@@ -67,7 +114,9 @@
       "@type": "HomeAndConstructionBusiness",
       "name": "3G Velarias Residencial",
       "description": "Soluciones premium en velarias, pérgolas y cubiertas ligeras para tu hogar. Más de 15 años transformando espacios residenciales.",
+      "image": "https://3gvelarias.com/Logo-3G.svg",
       "telephone": "+524621490313",
+      "email": "ventas@arquitecturatextil3g.com",
       "address": {
         "@type": "PostalAddress",
         "streetAddress": "Paseo de la Altiplanicie 280, Villas de Irapuato",
@@ -76,7 +125,8 @@
         "postalCode": "36670",
         "addressCountry": "MX"
       },
-      "priceRange": "$$$",
+      "url": "https://3gvelarias.com/residencial/",
+      "priceRange": "$$",
       "openingHoursSpecification": {
         "@type": "OpeningHoursSpecification",
         "dayOfWeek": [
@@ -94,6 +144,11 @@
 </head>
 
 <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5SSKTHPT" height="0" width="0"
+            style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
     <!-- Header -->
     <header class="header" id="header">
         <div class="header-container">
@@ -111,7 +166,7 @@
                 <a href="#inicio" class="nav-link">Inicio</a>
                 <a href="#servicios" class="nav-link">Servicios</a>
                 <a href="#proyectos" class="nav-link">Proyectos</a>
-                <a href="#nosotros" class="nav-link">Nosotros</a>
+                <a href="#cobertura" class="nav-link">Cobertura</a>
                 <a href="#contacto" class="nav-link nav-cta">Contáctanos</a>
             </nav>
             <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú">
@@ -434,6 +489,7 @@
                     <input type="hidden" name="_subject" value="Nueva Solicitud - 3G Arquitectura Textil Residencial">
                     <input type="hidden" name="_captcha" value="false">
                     <input type="hidden" name="_template" value="table">
+                    <input type="hidden" name="_next" value="https://www.3gvelarias.com/gracias.html?theme=residential">
                     <!-- Honeypot for spam protection -->
                     <input type="text" name="_honey" style="display:none">
                     <div class="form-group">
@@ -493,7 +549,7 @@
                     <a href="#inicio">Inicio</a>
                     <a href="#servicios">Servicios</a>
                     <a href="#proyectos">Proyectos</a>
-                    <a href="#nosotros">Nosotros</a>
+                    <a href="#cobertura">Cobertura</a>
                     <a href="#contacto">Contacto</a>
                 </div>
                 <div class="footer-links">
@@ -555,6 +611,10 @@
     </a>
 
 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="script.js"></script>
 </body>
 

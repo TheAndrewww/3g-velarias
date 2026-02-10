@@ -4,6 +4,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Tag Manager -->
+    <script>(function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({
+                'gtm.start':
+                    new Date().getTime(), event: 'gtm.js'
+            }); var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                    'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-5SSKTHPT');</script>
+    <!-- End Google Tag Manager -->
+
+    <script>
+        // Conversion Event: Generate Lead (pushes to GTM dataLayer)
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+            'event': 'generate_lead',
+            'category': 'Engagement',
+            'label': 'Form Submission Success',
+            'value': 1
+        });
+    </script>
+
+
     <title>¡Gracias! | 3G Velarias</title>
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/svg+xml" href="Logo-3G.svg">
@@ -180,6 +204,11 @@
 </head>
 
 <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5SSKTHPT" height="0" width="0"
+            style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
     <div class="container">
         <div class="checkmark">
             <svg viewBox="0 0 24 24">
@@ -193,12 +222,24 @@
             se pondrá en contacto contigo en las próximas <strong>1-12 horas hábiles</strong>.
         </p>
 
-        <a href="javascript:history.back()" class="btn">
+        <a id="back-btn" href="/" class="btn">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
             Volver al inicio
         </a>
+        <script>
+            (function () {
+                var params = new URLSearchParams(window.location.search);
+                var theme = params.get('theme');
+                var btn = document.getElementById('back-btn');
+                if (theme === 'dark') {
+                    btn.href = '/industrial/';
+                } else {
+                    btn.href = '/residencial/';
+                }
+            })();
+        </script>
 
         <div class="contact-info">
             <p>¿Tienes alguna duda urgente?</p>

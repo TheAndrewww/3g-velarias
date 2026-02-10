@@ -2012,7 +2012,7 @@ button {
     position: relative;
 }
 
-/* Gradient Overlay is handled by hero-grid-overlay or we add a new one */
+/* Gradient Overlay for hero readability */
 .hero::after {
     content: '';
     position: absolute;
@@ -2020,23 +2020,14 @@ button {
     left: 0;
     width: 100%;
     height: 100%;
-    /* background: linear-gradient(to bottom,
-            rgba(0, 0, 0, 0.4) 0%,
-            rgba(0, 0, 0, 0.2) 50%,
-            var(--color-bg-dark) 100%); */
-    background: transparent;
-    /* Debugging: No gradient */
+    background: linear-gradient(to right,
+            var(--color-bg-dark) 0%,
+            rgba(0, 0, 0, 0.6) 40%,
+            transparent 70%);
     z-index: 1;
     pointer-events: none;
-    /* Let clicks pass if needed, though map is non-interactive */
 }
 
-/* Remove old map container styles if any conflict */
-.leaflet-container {
-    background: transparent !important;
-    /* Ensure bg doesn't block */
-    font-family: 'Outfit', sans-serif;
-}
 
 
 .map-popup-header {
@@ -2095,13 +2086,4 @@ button {
         opacity: 1;
         transform: scale(1) translateY(0);
     }
-}
-
-.custom-popup .leaflet-popup-content-wrapper {
-    animation: popupGrow 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    transform-origin: bottom center;
-}
-
-.custom-popup .leaflet-popup-tip {
-    animation: popupGrow 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }

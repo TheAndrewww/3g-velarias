@@ -22,3 +22,4 @@ Thumbs.db
 
 # Environment (if needed in future)
 .env.local
+.vercel

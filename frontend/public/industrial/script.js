@@ -19,6 +19,24 @@ function getImageUrl(imagePath) {
     return API_BASE_URL + '/' + imagePath;
 }
 
+// Helper: get optimized WebP URL for a backend image
+function getOptimizedUrl(imagePath) {
+    if (!imagePath || imagePath.startsWith('http')) return getImageUrl(imagePath);
+    const parts = imagePath.split('/');
+    const filename = parts.pop();
+    const baseName = filename.replace(/\.[^.]+$/, '');
+    return getImageUrl(parts.join('/') + '/optimized/' + baseName + '.webp');
+}
+
+// Helper: get thumbnail WebP URL for a backend image
+function getThumbnailUrl(imagePath) {
+    if (!imagePath || imagePath.startsWith('http')) return getImageUrl(imagePath);
+    const parts = imagePath.split('/');
+    const filename = parts.pop();
+    const baseName = filename.replace(/\.[^.]+$/, '');
+    return getImageUrl(parts.join('/') + '/thumbnails/' + baseName + '-thumb.webp');
+}
+
 // Global variable to store projects loaded from API
 let industrialProjects = [];
 
@@ -427,7 +445,7 @@ function initContactForm() {
 
             if (response.ok) {
                 // Redirect to Thank You Page for Conversion Tracking
-                window.location.href = '../gracias.html?theme=industrial';
+                window.location.href = '../gracias.html?theme=dark';
 
                 // Backup success msg
                 submitBtn.innerHTML = `
@@ -514,11 +532,12 @@ function initDynamicProjects() {
     const createProjectCard = (project, index) => {
         const delay = (index % ITEMS_PER_PAGE) * 100;
 
-        // Convert image URLs to absolute URLs
-        const absoluteImageUrl = getImageUrl(project.image);
+        // Convert image URLs to optimized versions
+        const optimizedImageUrl = getOptimizedUrl(project.image);
+        const thumbnailUrl = getThumbnailUrl(project.image);
         const absoluteImages = project.images && project.images.length
-            ? project.images.map(img => getImageUrl(img))
-            : [absoluteImageUrl];
+            ? project.images.map(img => getOptimizedUrl(img))
+            : [optimizedImageUrl];
 
         // Handle single image vs multiple images array
         let imagesAttr = `data-images='${JSON.stringify(absoluteImages)}'`;
@@ -531,10 +550,10 @@ function initDynamicProjects() {
                 data-area="${project.area}"
                 data-duration="${project.duration}"
                 data-description="${project.description}"
-                data-image="${absoluteImageUrl}"
+                data-image="${optimizedImageUrl}"
                 ${imagesAttr}>
                 <div class="project-image">
-                    <img src="${absoluteImageUrl}" alt="${project.title}" loading="lazy">
+                    <img src="${thumbnailUrl}" alt="${project.title}" loading="lazy" width="400" height="300">
                 </div>
                 <div class="project-info">
                     <span class="project-category">${capitalizeFirst(project.category)}</span>
@@ -656,6 +675,11 @@ document.head.appendChild(style);
  */
 function initMap() {
     const mapContainer = document.getElementById('map');
+    // Skip globe on mobile for performance (Three.js + Globe.gl ~1MB)
+    if (window.innerWidth < 768) {
+        if (mapContainer) mapContainer.style.display = 'none';
+        return;
+    }
     // Ensure Globe is defined. If not, we might need to wait or it's a script load issue.
     if (!mapContainer || typeof Globe === 'undefined' || typeof industrialProjects === 'undefined') return;
 
@@ -825,10 +849,11 @@ function initMap() {
                         }
                     };
 
-                    // Click to select
+                    // Click to open project modal
                     el.onclick = () => {
-                        // Manually trigger highlight or modal?
-                        // For now just let the auto-rotation handle it or maybe pause?
+                        if (typeof window.openProjectModal === 'function') {
+                            window.openProjectModal(d);
+                        }
                     };
 
                     // Mark element for update loop

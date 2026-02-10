@@ -19,6 +19,25 @@ function getImageUrl(imagePath) {
     return API_BASE_URL + '/' + imagePath;
 }
 
+// Helper: get optimized WebP URL for a backend image
+function getOptimizedUrl(imagePath) {
+    if (!imagePath || imagePath.startsWith('http')) return getImageUrl(imagePath);
+    // /images/proyectos/type/filename.ext → /images/proyectos/type/optimized/filename.webp
+    const parts = imagePath.split('/');
+    const filename = parts.pop();
+    const baseName = filename.replace(/\.[^.]+$/, '');
+    return getImageUrl(parts.join('/') + '/optimized/' + baseName + '.webp');
+}
+
+// Helper: get thumbnail WebP URL for a backend image
+function getThumbnailUrl(imagePath) {
+    if (!imagePath || imagePath.startsWith('http')) return getImageUrl(imagePath);
+    const parts = imagePath.split('/');
+    const filename = parts.pop();
+    const baseName = filename.replace(/\.[^.]+$/, '');
+    return getImageUrl(parts.join('/') + '/thumbnails/' + baseName + '-thumb.webp');
+}
+
 // Global variable to store projects loaded from API
 let residentialProjects = [
     {
@@ -370,12 +389,12 @@ function initProjectModal() {
             try {
                 // Check if it's already an array (from direct object) or string (from dataset)
                 const images = Array.isArray(data.images) ? data.images : JSON.parse(data.images);
-                currentImages = images.map(img => getImageUrl(img));
+                currentImages = images.map(img => getOptimizedUrl(img));
             } catch (e) {
-                currentImages = [getImageUrl(data.image || '')];
+                currentImages = [getOptimizedUrl(data.image || '')];
             }
         } else {
-            currentImages = [getImageUrl(data.image || '')];
+            currentImages = [getOptimizedUrl(data.image || '')];
         }
 
         currentImageIndex = 0;
@@ -613,11 +632,12 @@ function initDynamicProjects() {
     const createProjectCard = (project, index) => {
         const delay = (index % ITEMS_PER_PAGE) * 100;
 
-        // Convert image URLs to absolute URLs
-        const absoluteImageUrl = getImageUrl(project.image);
+        // Convert image URLs to optimized versions
+        const optimizedImageUrl = getOptimizedUrl(project.image);
+        const thumbnailUrl = getThumbnailUrl(project.image);
         const absoluteImages = project.images && project.images.length
-            ? project.images.map(img => getImageUrl(img))
-            : [absoluteImageUrl];
+            ? project.images.map(img => getOptimizedUrl(img))
+            : [optimizedImageUrl];
 
         // Handle single image vs multiple images array
         let imagesAttr = `data-images='${JSON.stringify(absoluteImages)}'`;
@@ -630,10 +650,10 @@ function initDynamicProjects() {
                 data-area="${project.area}"
                 data-duration="${project.duration}"
                 data-description="${project.description}"
-                data-image="${absoluteImageUrl}"
+                data-image="${optimizedImageUrl}"
                 ${imagesAttr}>
                 <div class="project-image">
-                    <img src="${absoluteImageUrl}" alt="${project.title}" loading="lazy">
+                    <img src="${thumbnailUrl}" alt="${project.title}" loading="lazy" width="400" height="300">
                 </div>
                 <div class="project-info">
                     <span class="project-category">${capitalizeFirst(project.category)}</span>
@@ -785,7 +805,7 @@ function initMap() {
             // Popup Content
             const popupContent = `
                 <div class="map-popup">
-                    <div class="map-popup-image" style="background-image: url('${getImageUrl(project.image)}')"></div>
+                    <div class="map-popup-image" style="background-image: url('${getThumbnailUrl(project.image)}')"></div>
                     <div class="map-popup-info">
                         <h4>${project.title}</h4>
                         <p>${project.location}</p>

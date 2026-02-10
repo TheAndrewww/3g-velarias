@@ -5,15 +5,53 @@ const path = require('path');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
+const rateLimit = require('express-rate-limit');
+const sharp = require('sharp');
+const compression = require('compression');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'changeme123';
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// Security: Require critical environment variables in production
+if (NODE_ENV === 'production') {
+    if (!JWT_SECRET || JWT_SECRET.length < 32) {
+        console.error('\x1b[31m%s\x1b[0m', '❌ FATAL: JWT_SECRET must be set and at least 32 characters in production');
+        process.exit(1);
+    }
+    if (!ADMIN_PASSWORD || ADMIN_PASSWORD === 'changeme123') {
+        console.error('\x1b[31m%s\x1b[0m', '❌ FATAL: ADMIN_PASSWORD must be changed from default in production');
+        process.exit(1);
+    }
+    if (!ADMIN_USERNAME || ADMIN_USERNAME === 'admin') {
+        console.warn('\x1b[33m%s\x1b[0m', '⚠️  WARNING: Consider changing ADMIN_USERNAME from default "admin"');
+    }
+} else {
+    // Development fallbacks with warnings
+    if (!JWT_SECRET) console.warn('⚠️  JWT_SECRET not set, using insecure default (OK for development)');
+    if (!ADMIN_PASSWORD) console.warn('⚠️  ADMIN_PASSWORD not set, using default (OK for development)');
+}
+
+const SAFE_JWT_SECRET = JWT_SECRET || 'dev-only-insecure-secret-do-not-use-in-prod';
+const SAFE_ADMIN_USERNAME = ADMIN_USERNAME || 'admin';
+const SAFE_ADMIN_PASSWORD = ADMIN_PASSWORD || 'changeme123';
+
+// Rate limiting for login endpoint
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // max 5 attempts per window per IP
+    message: {
+        success: false,
+        error: 'Demasiados intentos de inicio de sesión. Intente de nuevo en 15 minutos.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
 // Middleware
 const corsOptions = {
@@ -23,11 +61,15 @@ const corsOptions = {
     credentials: true
 };
 app.use(cors(corsOptions));
+app.use(compression()); // Gzip all responses
 app.use(express.json());
 app.use(cookieParser());
 
-// Serve uploaded images (esto puede ir arriba sin problema)
-app.use('/images', express.static(path.join(__dirname, '..', 'uploads')));
+// Serve uploaded images with cache headers
+app.use('/images', express.static(path.join(__dirname, '..', 'uploads'), {
+    maxAge: '7d',
+    immutable: true
+}));
 
 
 // Configure Multer for Image Uploads
@@ -61,6 +103,70 @@ const upload = multer({
         }
     }
 });
+
+/**
+ * Process uploaded images with sharp:
+ * - Optimized: max 1200px wide, WebP quality 80
+ * - Thumbnail: max 400px wide, WebP quality 70
+ */
+async function processUploadedImages(files, type) {
+    const results = [];
+
+    for (const file of files) {
+        const dir = path.dirname(file.path);
+        const baseName = path.basename(file.filename, path.extname(file.filename));
+
+        // Create output directories
+        const optimizedDir = path.join(dir, 'optimized');
+        const thumbDir = path.join(dir, 'thumbnails');
+        fs.mkdirSync(optimizedDir, { recursive: true });
+        fs.mkdirSync(thumbDir, { recursive: true });
+
+        const optimizedName = `${baseName}.webp`;
+        const thumbName = `${baseName}-thumb.webp`;
+
+        try {
+            // Generate optimized version (max 1200px wide)
+            await sharp(file.path)
+                .resize(1200, null, { withoutEnlargement: true })
+                .webp({ quality: 80 })
+                .toFile(path.join(optimizedDir, optimizedName));
+
+            // Generate thumbnail (max 400px wide)
+            await sharp(file.path)
+                .resize(400, null, { withoutEnlargement: true })
+                .webp({ quality: 70 })
+                .toFile(path.join(thumbDir, thumbName));
+
+            const originalPath = `/images/proyectos/${type}/${file.filename}`;
+            const optimizedPath = `/images/proyectos/${type}/optimized/${optimizedName}`;
+            const thumbPath = `/images/proyectos/${type}/thumbnails/${thumbName}`;
+
+            results.push({
+                original: originalPath,
+                optimized: optimizedPath,
+                thumbnail: thumbPath
+            });
+
+            // Log savings
+            const origSize = fs.statSync(file.path).size;
+            const optSize = fs.statSync(path.join(optimizedDir, optimizedName)).size;
+            const savings = ((1 - optSize / origSize) * 100).toFixed(1);
+            console.log(`📸 ${file.filename}: ${(origSize / 1024 / 1024).toFixed(1)}MB → ${(optSize / 1024 / 1024).toFixed(1)}MB (${savings}% smaller)`);
+
+        } catch (err) {
+            console.error(`Error processing ${file.filename}:`, err.message);
+            // Fallback to original if processing fails
+            results.push({
+                original: `/images/proyectos/${type}/${file.filename}`,
+                optimized: `/images/proyectos/${type}/${file.filename}`,
+                thumbnail: `/images/proyectos/${type}/${file.filename}`
+            });
+        }
+    }
+
+    return results;
+}
 
 // Database File Path
 const DB_PATH = path.join(__dirname, '..', 'data', 'projects.json');
@@ -130,6 +236,23 @@ app.post('/api/projects', jwtAuth, (req, res) => {
     try {
         const { type } = req.query; // 'residential' or 'industrial'
         const newProject = req.body;
+
+        // Input validation
+        if (!newProject.title || typeof newProject.title !== 'string' || !newProject.title.trim()) {
+            return res.status(400).json({ error: 'El campo "title" es requerido' });
+        }
+        if (!newProject.category || typeof newProject.category !== 'string') {
+            return res.status(400).json({ error: 'El campo "category" es requerido' });
+        }
+        if (!newProject.location || typeof newProject.location !== 'string') {
+            return res.status(400).json({ error: 'El campo "location" es requerido' });
+        }
+
+        // Sanitize string fields
+        newProject.title = newProject.title.trim();
+        newProject.category = newProject.category.trim().toLowerCase();
+        newProject.location = newProject.location.trim();
+
         const data = readData();
 
         if (type === 'residential') {
@@ -147,7 +270,7 @@ app.post('/api/projects', jwtAuth, (req, res) => {
 
 // Upload Images (protected)
 app.post('/api/upload', jwtAuth, (req, res) => {
-    upload.array('images')(req, res, (err) => {
+    upload.array('images')(req, res, async (err) => {
         if (err) {
             if (err.code === 'LIMIT_FILE_SIZE') {
                 return res.status(400).json({
@@ -173,22 +296,41 @@ app.post('/api/upload', jwtAuth, (req, res) => {
             const baseUrl = NODE_ENV === 'production'
                 ? process.env.BACKEND_URL
                 : `http://localhost:${PORT}`;
-            const paths = req.files.map(file => `/images/proyectos/${type}/${file.filename}`);
 
-            res.json({ success: true, paths: paths, baseUrl });
+            // Process images with sharp
+            const processed = await processUploadedImages(req.files, type);
+
+            // Return both original paths (backward compat) and optimized paths
+            const paths = processed.map(p => p.original);
+            const optimizedPaths = processed.map(p => p.optimized);
+            const thumbnailPaths = processed.map(p => p.thumbnail);
+
+            res.json({
+                success: true,
+                paths,
+                optimizedPaths,
+                thumbnailPaths,
+                baseUrl
+            });
         } catch (error) {
             res.status(500).json({ success: false, error: error.message });
         }
     });
 });
 
-// Update Project (protected)
+// Update Project (protected) - uses index but validates bounds
 app.put('/api/projects/:index', jwtAuth, (req, res) => {
     try {
         const { type } = req.query;
         const index = parseInt(req.params.index);
         const updatedProject = req.body;
         const data = readData();
+
+        const collection = type === 'residential' ? data.residentialProjects : data.industrialProjects;
+
+        if (isNaN(index) || index < 0 || index >= collection.length) {
+            return res.status(400).json({ error: 'Índice de proyecto inválido' });
+        }
 
         if (type === 'residential') {
             data.residentialProjects[index] = updatedProject;
@@ -203,12 +345,18 @@ app.put('/api/projects/:index', jwtAuth, (req, res) => {
     }
 });
 
-// Delete Project (protected)
+// Delete Project (protected) - validates bounds
 app.delete('/api/projects/:index', jwtAuth, (req, res) => {
     try {
         const { type } = req.query;
         const index = parseInt(req.params.index);
         const data = readData();
+
+        const collection = type === 'residential' ? data.residentialProjects : data.industrialProjects;
+
+        if (isNaN(index) || index < 0 || index >= collection.length) {
+            return res.status(400).json({ error: 'Índice de proyecto inválido' });
+        }
 
         if (type === 'residential') {
             data.residentialProjects.splice(index, 1);
@@ -232,7 +380,7 @@ function jwtAuth(req, res, next) {
     }
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = jwt.verify(token, SAFE_JWT_SECRET);
         req.user = decoded;
         next();
     } catch (error) {
@@ -250,7 +398,7 @@ function requireAuth(req, res, next) {
     }
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET);
+        const decoded = jwt.verify(token, SAFE_JWT_SECRET);
         req.user = decoded;
         next();
     } catch (error) {
@@ -260,14 +408,14 @@ function requireAuth(req, res, next) {
 }
 
 // Login endpoint (sin autenticación)
-app.post('/api/login', (req, res) => {
+app.post('/api/login', loginLimiter, (req, res) => {
     const { username, password, remember } = req.body;
 
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    if (username === SAFE_ADMIN_USERNAME && password === SAFE_ADMIN_PASSWORD) {
         // Generate JWT token
         const token = jwt.sign(
             { username: username },
-            JWT_SECRET,
+            SAFE_JWT_SECRET,
             { expiresIn: remember ? '30d' : '24h' } // 30 days if remember, 24 hours otherwise
         );
 
