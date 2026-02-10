@@ -8,9 +8,12 @@ const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const sharp = require('sharp');
 const compression = require('compression');
+const { PrismaClient } = require('@prisma/client');
+const { uploadImage } = require('./cloudinary');
 require('dotenv').config();
 
 const app = express();
+const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -65,71 +68,9 @@ app.use(compression()); // Gzip all responses
 app.use(express.json());
 app.use(cookieParser());
 
-// Persistent data directory (Railway volume or local)
-const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH
-    || path.join(__dirname, '..');
-const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
-const DB_DIR = path.join(DATA_DIR, 'data');
-
-// Ensure directories exist
-fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-fs.mkdirSync(DB_DIR, { recursive: true });
-
-// Seed data on first deploy: copy bundled files to volume if empty
-function seedIfEmpty() {
-    const volumeDB = path.join(DB_DIR, 'projects.json');
-    const bundledDB = path.join(__dirname, '..', 'data', 'projects.json');
-
-    if (!fs.existsSync(volumeDB) && fs.existsSync(bundledDB)) {
-        console.log('📦 Seeding projects.json from repo to persistent volume...');
-        fs.copyFileSync(bundledDB, volumeDB);
-    }
-
-    // Seed uploads
-    const bundledUploads = path.join(__dirname, '..', 'uploads');
-    if (fs.existsSync(bundledUploads)) {
-        const copyRecursive = (src, dest) => {
-            if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
-            for (const item of fs.readdirSync(src)) {
-                const srcPath = path.join(src, item);
-                const destPath = path.join(dest, item);
-                if (fs.statSync(srcPath).isDirectory()) {
-                    copyRecursive(srcPath, destPath);
-                } else if (!fs.existsSync(destPath)) {
-                    fs.copyFileSync(srcPath, destPath);
-                }
-            }
-        };
-        copyRecursive(bundledUploads, UPLOADS_DIR);
-    }
-}
-seedIfEmpty();
-
-// Serve uploaded images with cache headers
-app.use('/images', express.static(UPLOADS_DIR, {
-    maxAge: '7d',
-    immutable: true
-}));
-
-
-// Configure Multer for Image Uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const type = req.query.type || 'residencial';
-        const dir = path.join(UPLOADS_DIR, 'proyectos', type);
-
-        // Ensure directory exists
-        fs.mkdirSync(dir, { recursive: true });
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        // Sanitize filename
-        const safeName = file.originalname.replace(/[^a-z0-9.]/gi, '-').toLowerCase();
-        cb(null, `${Date.now()}-${safeName}`);
-    }
-});
+// Configure Multer for Image Uploads (memory storage — files go to Cloudinary, not disk)
 const upload = multer({
-    storage,
+    storage: multer.memoryStorage(),
     limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
     fileFilter: (req, file, cb) => {
         const allowedTypes = /jpeg|jpg|png|gif|webp/;
@@ -145,271 +86,32 @@ const upload = multer({
 });
 
 /**
- * Process uploaded images with sharp:
- * - Optimized: max 1200px wide, WebP quality 80
- * - Thumbnail: max 400px wide, WebP quality 70
+ * Process and upload image to Cloudinary
+ * 1. Resize with sharp (max 1200px)
+ * 2. Convert to WebP 
+ * 3. Upload buffer to Cloudinary
  */
-async function processUploadedImages(files, type) {
-    const results = [];
+async function processAndUpload(fileBuffer, originalName, type) {
+    // Optimize with sharp before uploading
+    const optimizedBuffer = await sharp(fileBuffer)
+        .resize(1200, null, { withoutEnlargement: true })
+        .webp({ quality: 80 })
+        .toBuffer();
 
-    for (const file of files) {
-        const dir = path.dirname(file.path);
-        const baseName = path.basename(file.filename, path.extname(file.filename));
+    const folder = `3g-velarias/${type}`;
+    const baseName = path.basename(originalName, path.extname(originalName))
+        .replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    const publicId = `${Date.now()}-${baseName}`;
 
-        // Create output directories
-        const optimizedDir = path.join(dir, 'optimized');
-        const thumbDir = path.join(dir, 'thumbnails');
-        fs.mkdirSync(optimizedDir, { recursive: true });
-        fs.mkdirSync(thumbDir, { recursive: true });
+    const result = await uploadImage(optimizedBuffer, folder, publicId);
 
-        const optimizedName = `${baseName}.webp`;
-        const thumbName = `${baseName}-thumb.webp`;
+    const origSize = fileBuffer.length;
+    const optSize = optimizedBuffer.length;
+    const savings = ((1 - optSize / origSize) * 100).toFixed(1);
+    console.log(`📸 ${originalName}: ${(origSize / 1024 / 1024).toFixed(1)}MB → ${(optSize / 1024 / 1024).toFixed(1)}MB (${savings}% smaller) → Cloudinary ✅`);
 
-        try {
-            // Generate optimized version (max 1200px wide)
-            await sharp(file.path)
-                .resize(1200, null, { withoutEnlargement: true })
-                .webp({ quality: 80 })
-                .toFile(path.join(optimizedDir, optimizedName));
-
-            // Generate thumbnail (max 400px wide)
-            await sharp(file.path)
-                .resize(400, null, { withoutEnlargement: true })
-                .webp({ quality: 70 })
-                .toFile(path.join(thumbDir, thumbName));
-
-            const originalPath = `/images/proyectos/${type}/${file.filename}`;
-            const optimizedPath = `/images/proyectos/${type}/optimized/${optimizedName}`;
-            const thumbPath = `/images/proyectos/${type}/thumbnails/${thumbName}`;
-
-            results.push({
-                original: originalPath,
-                optimized: optimizedPath,
-                thumbnail: thumbPath
-            });
-
-            // Log savings
-            const origSize = fs.statSync(file.path).size;
-            const optSize = fs.statSync(path.join(optimizedDir, optimizedName)).size;
-            const savings = ((1 - optSize / origSize) * 100).toFixed(1);
-            console.log(`📸 ${file.filename}: ${(origSize / 1024 / 1024).toFixed(1)}MB → ${(optSize / 1024 / 1024).toFixed(1)}MB (${savings}% smaller)`);
-
-        } catch (err) {
-            console.error(`Error processing ${file.filename}:`, err.message);
-            // Fallback to original if processing fails
-            results.push({
-                original: `/images/proyectos/${type}/${file.filename}`,
-                optimized: `/images/proyectos/${type}/${file.filename}`,
-                thumbnail: `/images/proyectos/${type}/${file.filename}`
-            });
-        }
-    }
-
-    return results;
+    return result;
 }
-
-// Database File Path
-const DB_PATH = path.join(DB_DIR, 'projects.json');
-const FRONTEND_JS_PATH = NODE_ENV === 'development'
-    ? path.join(__dirname, '..', '..', 'frontend', 'public', 'js', 'project-data.js')
-    : null; // En producción no generamos JS, usamos API
-
-// Helper: Read Data
-function readData() {
-    if (!fs.existsSync(DB_PATH)) return { residentialProjects: [], industrialProjects: [] };
-    const data = fs.readFileSync(DB_PATH, 'utf8');
-    return JSON.parse(data);
-}
-
-// Helper: Write Data & Sync to JS (solo en desarrollo)
-function writeData(data) {
-    // 1. Write JSON
-    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 4));
-
-    // 2. Sync to JS File (solo en desarrollo para frontend local)
-    if (FRONTEND_JS_PATH) {
-        const jsContent = `/**
- * 3G Velarias - Project Data
- * Auto-generated by Admin Panel
- */
-
-const residentialProjects = ${JSON.stringify(data.residentialProjects, null, 4)};
-
-const industrialProjects = ${JSON.stringify(data.industrialProjects, null, 4)};
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { residentialProjects, industrialProjects };
-}
-`;
-        // Ensure directory exists
-        const dir = path.dirname(FRONTEND_JS_PATH);
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        fs.writeFileSync(FRONTEND_JS_PATH, jsContent);
-    }
-}
-
-// Routes
-
-// Get Config (for admin panel)
-app.get('/api/config', (req, res) => {
-    res.json({
-        frontendUrl: FRONTEND_URL,
-        backendUrl: process.env.BACKEND_URL || `http://localhost:${PORT}`,
-        nodeEnv: NODE_ENV
-    });
-});
-
-// Get All Projects
-app.get('/api/projects', (req, res) => {
-    try {
-        const data = readData();
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Add Project (protected)
-app.post('/api/projects', jwtAuth, (req, res) => {
-    try {
-        const { type } = req.query; // 'residential' or 'industrial'
-        const newProject = req.body;
-
-        // Input validation
-        if (!newProject.title || typeof newProject.title !== 'string' || !newProject.title.trim()) {
-            return res.status(400).json({ error: 'El campo "title" es requerido' });
-        }
-        if (!newProject.category || typeof newProject.category !== 'string') {
-            return res.status(400).json({ error: 'El campo "category" es requerido' });
-        }
-        if (!newProject.location || typeof newProject.location !== 'string') {
-            return res.status(400).json({ error: 'El campo "location" es requerido' });
-        }
-
-        // Sanitize string fields
-        newProject.title = newProject.title.trim();
-        newProject.category = newProject.category.trim().toLowerCase();
-        newProject.location = newProject.location.trim();
-
-        const data = readData();
-
-        if (type === 'residential') {
-            data.residentialProjects.unshift(newProject);
-        } else {
-            data.industrialProjects.unshift(newProject);
-        }
-
-        writeData(data);
-        res.json({ success: true, project: newProject });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Upload Images (protected)
-app.post('/api/upload', jwtAuth, (req, res) => {
-    upload.array('images')(req, res, async (err) => {
-        if (err) {
-            if (err.code === 'LIMIT_FILE_SIZE') {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Archivo demasiado grande. El límite es 50MB por imagen.'
-                });
-            }
-            return res.status(500).json({
-                success: false,
-                error: err.message
-            });
-        }
-
-        try {
-            if (!req.files || req.files.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'No se subieron archivos'
-                });
-            }
-
-            const type = req.query.type || 'residencial';
-            const baseUrl = NODE_ENV === 'production'
-                ? process.env.BACKEND_URL
-                : `http://localhost:${PORT}`;
-
-            // Process images with sharp
-            const processed = await processUploadedImages(req.files, type);
-
-            // Return both original paths (backward compat) and optimized paths
-            const paths = processed.map(p => p.original);
-            const optimizedPaths = processed.map(p => p.optimized);
-            const thumbnailPaths = processed.map(p => p.thumbnail);
-
-            res.json({
-                success: true,
-                paths,
-                optimizedPaths,
-                thumbnailPaths,
-                baseUrl
-            });
-        } catch (error) {
-            res.status(500).json({ success: false, error: error.message });
-        }
-    });
-});
-
-// Update Project (protected) - uses index but validates bounds
-app.put('/api/projects/:index', jwtAuth, (req, res) => {
-    try {
-        const { type } = req.query;
-        const index = parseInt(req.params.index);
-        const updatedProject = req.body;
-        const data = readData();
-
-        const collection = type === 'residential' ? data.residentialProjects : data.industrialProjects;
-
-        if (isNaN(index) || index < 0 || index >= collection.length) {
-            return res.status(400).json({ error: 'Índice de proyecto inválido' });
-        }
-
-        if (type === 'residential') {
-            data.residentialProjects[index] = updatedProject;
-        } else {
-            data.industrialProjects[index] = updatedProject;
-        }
-
-        writeData(data);
-        res.json({ success: true, project: updatedProject });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Delete Project (protected) - validates bounds
-app.delete('/api/projects/:index', jwtAuth, (req, res) => {
-    try {
-        const { type } = req.query;
-        const index = parseInt(req.params.index);
-        const data = readData();
-
-        const collection = type === 'residential' ? data.residentialProjects : data.industrialProjects;
-
-        if (isNaN(index) || index < 0 || index >= collection.length) {
-            return res.status(400).json({ error: 'Índice de proyecto inválido' });
-        }
-
-        if (type === 'residential') {
-            data.residentialProjects.splice(index, 1);
-        } else {
-            data.industrialProjects.splice(index, 1);
-        }
-
-        writeData(data);
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
 
 // Middleware de autenticación JWT para API (solo retorna JSON)
 function jwtAuth(req, res, next) {
@@ -446,6 +148,201 @@ function requireAuth(req, res, next) {
         return res.redirect('/admin/login');
     }
 }
+
+// ==================== ROUTES ====================
+
+// Get Config (for admin panel)
+app.get('/api/config', (req, res) => {
+    res.json({
+        frontendUrl: FRONTEND_URL,
+        backendUrl: process.env.BACKEND_URL || `http://localhost:${PORT}`,
+        nodeEnv: NODE_ENV
+    });
+});
+
+// Get All Projects — returns same format as old JSON for frontend compatibility
+app.get('/api/projects', async (req, res) => {
+    try {
+        const residential = await prisma.project.findMany({
+            where: { type: 'residential' },
+            orderBy: { createdAt: 'desc' },
+        });
+        const industrial = await prisma.project.findMany({
+            where: { type: 'industrial' },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        // Map to frontend format (strip internal fields)
+        const mapProject = (p) => ({
+            id: p.id,
+            category: p.category,
+            title: p.title,
+            location: p.location,
+            area: p.area,
+            duration: p.duration,
+            description: p.description,
+            image: p.image,
+            images: p.images,
+            ...(p.coordinates.length > 0 && { coordinates: p.coordinates }),
+        });
+
+        res.json({
+            residentialProjects: residential.map(mapProject),
+            industrialProjects: industrial.map(mapProject),
+        });
+    } catch (error) {
+        console.error('Error fetching projects:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Add Project (protected)
+app.post('/api/projects', jwtAuth, async (req, res) => {
+    try {
+        const { type } = req.query; // 'residential' or 'industrial'
+        const body = req.body;
+
+        // Input validation
+        if (!body.title || typeof body.title !== 'string' || !body.title.trim()) {
+            return res.status(400).json({ error: 'El campo "title" es requerido' });
+        }
+        if (!body.category || typeof body.category !== 'string') {
+            return res.status(400).json({ error: 'El campo "category" es requerido' });
+        }
+        if (!body.location || typeof body.location !== 'string') {
+            return res.status(400).json({ error: 'El campo "location" es requerido' });
+        }
+
+        const project = await prisma.project.create({
+            data: {
+                type: type === 'residential' ? 'residential' : 'industrial',
+                category: body.category.trim().toLowerCase(),
+                title: body.title.trim(),
+                location: body.location.trim(),
+                area: body.area || null,
+                duration: body.duration || null,
+                description: body.description || null,
+                image: body.image || '',
+                images: body.images || [],
+                coordinates: body.coordinates || [],
+            },
+        });
+
+        res.json({ success: true, project });
+    } catch (error) {
+        console.error('Error creating project:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Upload Images (protected) — processes with sharp then uploads to Cloudinary
+app.post('/api/upload', jwtAuth, (req, res) => {
+    upload.array('images')(req, res, async (err) => {
+        if (err) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Archivo demasiado grande. El límite es 50MB por imagen.'
+                });
+            }
+            return res.status(500).json({
+                success: false,
+                error: err.message
+            });
+        }
+
+        try {
+            if (!req.files || req.files.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'No se subieron archivos'
+                });
+            }
+
+            const type = req.query.type || 'residential';
+            const results = [];
+
+            for (const file of req.files) {
+                const result = await processAndUpload(file.buffer, file.originalname, type);
+                results.push(result);
+            }
+
+            // Return Cloudinary URLs — compatible with frontend
+            const paths = results.map(r => r.url);
+            const optimizedPaths = results.map(r => r.url);
+            const thumbnailPaths = results.map(r => r.thumbnailUrl);
+
+            res.json({
+                success: true,
+                paths,
+                optimizedPaths,
+                thumbnailPaths,
+            });
+        } catch (error) {
+            console.error('Error uploading images:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+});
+
+// Update Project (protected) — now uses database ID
+app.put('/api/projects/:id', jwtAuth, async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const body = req.body;
+
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'ID de proyecto inválido' });
+        }
+
+        const existing = await prisma.project.findUnique({ where: { id } });
+        if (!existing) {
+            return res.status(404).json({ error: 'Proyecto no encontrado' });
+        }
+
+        const project = await prisma.project.update({
+            where: { id },
+            data: {
+                category: body.category || existing.category,
+                title: body.title || existing.title,
+                location: body.location || existing.location,
+                area: body.area !== undefined ? body.area : existing.area,
+                duration: body.duration !== undefined ? body.duration : existing.duration,
+                description: body.description !== undefined ? body.description : existing.description,
+                image: body.image || existing.image,
+                images: body.images || existing.images,
+                coordinates: body.coordinates || existing.coordinates,
+            },
+        });
+
+        res.json({ success: true, project });
+    } catch (error) {
+        console.error('Error updating project:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete Project (protected) — now uses database ID
+app.delete('/api/projects/:id', jwtAuth, async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'ID de proyecto inválido' });
+        }
+
+        const existing = await prisma.project.findUnique({ where: { id } });
+        if (!existing) {
+            return res.status(404).json({ error: 'Proyecto no encontrado' });
+        }
+
+        await prisma.project.delete({ where: { id } });
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting project:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // Login endpoint (sin autenticación)
 app.post('/api/login', loginLimiter, (req, res) => {
@@ -490,12 +387,25 @@ app.get('/admin', requireAuth, (req, res) => {
 });
 
 // Health check endpoint (sin autenticación)
-app.get('/health', (req, res) => {
-    res.json({ status: 'ok', environment: NODE_ENV });
+app.get('/health', async (req, res) => {
+    try {
+        // Quick DB check
+        await prisma.$queryRaw`SELECT 1`;
+        res.json({ status: 'ok', environment: NODE_ENV, database: 'connected' });
+    } catch (error) {
+        res.status(500).json({ status: 'error', environment: NODE_ENV, database: 'disconnected' });
+    }
 });
 
 // Serve Admin Static Files (JS, CSS, assets) - DESPUÉS de las rutas específicas
 app.use('/admin', express.static(path.join(__dirname, 'admin-public')));
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+    console.log('SIGTERM received, shutting down gracefully...');
+    await prisma.$disconnect();
+    process.exit(0);
+});
 
 // Start Server
 app.listen(PORT, () => {
@@ -506,6 +416,8 @@ app.listen(PORT, () => {
 
 🚀 Server running on port ${PORT}
 🌍 Environment: ${NODE_ENV}
+🗄️  Database: PostgreSQL (Prisma)
+☁️  Images: Cloudinary
 📁 Admin Panel: http://localhost:${PORT}/admin
 🔐 Username: ${ADMIN_USERNAME}
 ⚡ API Base: http://localhost:${PORT}/api
