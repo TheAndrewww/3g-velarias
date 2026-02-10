@@ -65,8 +65,48 @@ app.use(compression()); // Gzip all responses
 app.use(express.json());
 app.use(cookieParser());
 
+// Persistent data directory (Railway volume or local)
+const DATA_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH
+    || path.join(__dirname, '..');
+const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
+const DB_DIR = path.join(DATA_DIR, 'data');
+
+// Ensure directories exist
+fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+fs.mkdirSync(DB_DIR, { recursive: true });
+
+// Seed data on first deploy: copy bundled files to volume if empty
+function seedIfEmpty() {
+    const volumeDB = path.join(DB_DIR, 'projects.json');
+    const bundledDB = path.join(__dirname, '..', 'data', 'projects.json');
+
+    if (!fs.existsSync(volumeDB) && fs.existsSync(bundledDB)) {
+        console.log('📦 Seeding projects.json from repo to persistent volume...');
+        fs.copyFileSync(bundledDB, volumeDB);
+    }
+
+    // Seed uploads
+    const bundledUploads = path.join(__dirname, '..', 'uploads');
+    if (fs.existsSync(bundledUploads)) {
+        const copyRecursive = (src, dest) => {
+            if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+            for (const item of fs.readdirSync(src)) {
+                const srcPath = path.join(src, item);
+                const destPath = path.join(dest, item);
+                if (fs.statSync(srcPath).isDirectory()) {
+                    copyRecursive(srcPath, destPath);
+                } else if (!fs.existsSync(destPath)) {
+                    fs.copyFileSync(srcPath, destPath);
+                }
+            }
+        };
+        copyRecursive(bundledUploads, UPLOADS_DIR);
+    }
+}
+seedIfEmpty();
+
 // Serve uploaded images with cache headers
-app.use('/images', express.static(path.join(__dirname, '..', 'uploads'), {
+app.use('/images', express.static(UPLOADS_DIR, {
     maxAge: '7d',
     immutable: true
 }));
@@ -76,7 +116,7 @@ app.use('/images', express.static(path.join(__dirname, '..', 'uploads'), {
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const type = req.query.type || 'residencial';
-        const dir = path.join(__dirname, '..', 'uploads', 'proyectos', type);
+        const dir = path.join(UPLOADS_DIR, 'proyectos', type);
 
         // Ensure directory exists
         fs.mkdirSync(dir, { recursive: true });
@@ -169,7 +209,7 @@ async function processUploadedImages(files, type) {
 }
 
 // Database File Path
-const DB_PATH = path.join(__dirname, '..', 'data', 'projects.json');
+const DB_PATH = path.join(DB_DIR, 'projects.json');
 const FRONTEND_JS_PATH = NODE_ENV === 'development'
     ? path.join(__dirname, '..', '..', 'frontend', 'public', 'js', 'project-data.js')
     : null; // En producción no generamos JS, usamos API
