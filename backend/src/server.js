@@ -280,7 +280,17 @@ app.post('/api/upload', jwtAuth, (req, res) => {
             });
         } catch (error) {
             console.error('Error uploading images:', error);
-            res.status(500).json({ success: false, error: error.message });
+            console.error('Error stack:', error.stack);
+            console.error('Cloudinary config:', {
+                cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? 'SET' : 'MISSING',
+                api_key: process.env.CLOUDINARY_API_KEY ? 'SET' : 'MISSING',
+                api_secret: process.env.CLOUDINARY_API_SECRET ? 'SET' : 'MISSING'
+            });
+            res.status(500).json({
+                success: false,
+                error: error.message,
+                details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            });
         }
     });
 });
