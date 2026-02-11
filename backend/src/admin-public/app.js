@@ -189,62 +189,91 @@ async function saveProject(e) {
 
     // 1. Upload new files ONE BY ONE with visual feedback
     if (filesToUpload.length > 0) {
+        // Pre-check: Warn about files >10MB (Cloudinary free limit)
+        const oversizedFiles = filesToUpload.filter(f => f.size > 10 * 1024 * 1024);
+        if (oversizedFiles.length > 0) {
+            const fileList = oversizedFiles.map(f => `• ${f.name} (${(f.size / 1024 / 1024).toFixed(1)}MB)`).join('\n');
+            const proceed = confirm(
+                `⚠️ Las siguientes imágenes exceden el límite de 10MB de Cloudinary:\n\n${fileList}\n\n` +
+                `Estas imágenes serán OMITIDAS automáticamente.\n\n` +
+                `¿Deseas continuar subiendo el resto de imágenes?`
+            );
+            if (!proceed) return;
+        }
+
         showUploadProgress();
         document.getElementById('upload-progress-list').innerHTML = '';
 
         // Add all files to the list as pending
-        filesToUpload.forEach(file => addUploadItem(file.name, 'pending'));
-
-        try {
-            for (let i = 0; i < filesToUpload.length; i++) {
-                const file = filesToUpload[i];
-                updateUploadProgress(i, filesToUpload.length, file.name, 'uploading');
-                updateUploadItem(file.name, 'uploading');
-
-                const formData = new FormData();
-                formData.append('images', file);
-
-                try {
-                    const uploadRes = await fetch(`/api/upload?type=${currentTab}`, {
-                        method: 'POST',
-                        body: formData,
-                        credentials: 'include'
-                    });
-
-                    if (!uploadRes.ok) {
-                        const error = await uploadRes.json();
-                        const errorMsg = error.error || `HTTP ${uploadRes.status}`;
-                        updateUploadItem(file.name, 'error', errorMsg);
-                        throw new Error(`Error en ${file.name}: ${errorMsg}`);
-                    }
-
-                    const uploadData = await uploadRes.json();
-                    if (!uploadData.success) {
-                        updateUploadItem(file.name, 'error', uploadData.error);
-                        throw new Error(`Error en ${file.name}: ${uploadData.error}`);
-                    }
-
-                    // Success! Add the uploaded path
-                    uploadedPaths.push(...uploadData.paths);
-                    updateUploadItem(file.name, 'success');
-                    updateUploadProgress(i + 1, filesToUpload.length, file.name, 'success');
-
-                } catch (fileError) {
-                    hideUploadProgress();
-                    alert(fileError.message);
-                    return;
-                }
+        filesToUpload.forEach(file => {
+            const isOversized = file.size > 10 * 1024 * 1024;
+            addUploadItem(file.name, isOversized ? 'error' : 'pending');
+            if (isOversized) {
+                updateUploadItem(file.name, 'error', `${(file.size / 1024 / 1024).toFixed(1)}MB > 10MB`);
             }
+        });
 
-            // All uploads complete
-            updateUploadProgress(filesToUpload.length, filesToUpload.length, 'Todas las imágenes', 'success');
-            setTimeout(() => hideUploadProgress(), 1000);
+        const filesToActuallyUpload = filesToUpload.filter(f => f.size <= 10 * 1024 * 1024);
+        let successCount = 0;
+        let errorCount = 0;
 
-        } catch (err) {
-            hideUploadProgress();
-            alert('Error subiendo imágenes: ' + err.message);
-            return;
+        for (let i = 0; i < filesToActuallyUpload.length; i++) {
+            const file = filesToActuallyUpload[i];
+            updateUploadProgress(i, filesToActuallyUpload.length, file.name, 'uploading');
+            updateUploadItem(file.name, 'uploading');
+
+            const formData = new FormData();
+            formData.append('images', file);
+
+            try {
+                const uploadRes = await fetch(`/api/upload?type=${currentTab}`, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                if (!uploadRes.ok) {
+                    const error = await uploadRes.json();
+                    const errorMsg = error.error || `HTTP ${uploadRes.status}`;
+                    updateUploadItem(file.name, 'error', errorMsg.substring(0, 50));
+                    errorCount++;
+                    continue; // Skip this file, continue with others
+                }
+
+                const uploadData = await uploadRes.json();
+                if (!uploadData.success) {
+                    updateUploadItem(file.name, 'error', uploadData.error.substring(0, 50));
+                    errorCount++;
+                    continue;
+                }
+
+                // Success! Add the uploaded path
+                uploadedPaths.push(...uploadData.paths);
+                updateUploadItem(file.name, 'success');
+                updateUploadProgress(i + 1, filesToActuallyUpload.length, file.name, 'success');
+                successCount++;
+
+            } catch (fileError) {
+                console.error('Upload error:', fileError);
+                updateUploadItem(file.name, 'error', 'Error de red');
+                errorCount++;
+            }
         }
+
+        // Show final summary
+        const skippedCount = filesToUpload.length - filesToActuallyUpload.length;
+        updateUploadProgress(
+            filesToActuallyUpload.length,
+            filesToActuallyUpload.length,
+            `✅ ${successCount} exitosas, ❌ ${errorCount} errores${skippedCount > 0 ? `, ⏭️ ${skippedCount} omitidas` : ''}`,
+            'success'
+        );
+
+        // Auto-hide after 3 seconds if all successful
+        if (errorCount === 0) {
+            setTimeout(() => hideUploadProgress(), 2000);
+        }
+        // If there were errors, keep modal open so user can see what failed
     }
 
     // Combine paths
