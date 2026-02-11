@@ -43,6 +43,11 @@ const SAFE_JWT_SECRET = JWT_SECRET || 'dev-only-insecure-secret-do-not-use-in-pr
 const SAFE_ADMIN_USERNAME = ADMIN_USERNAME || 'admin';
 const SAFE_ADMIN_PASSWORD = ADMIN_PASSWORD || 'changeme123';
 
+// Trust proxy for Railway/production (required for rate limiting and real IP detection)
+if (NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+}
+
 // Rate limiting for login endpoint
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
