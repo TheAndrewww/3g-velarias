@@ -12,25 +12,24 @@ cloudinary.config({
 });
 
 /**
- * Upload an image buffer to Cloudinary
+ * Upload an image buffer to Cloudinary (FAST - no pre-processing)
  * @param {Buffer} buffer - Image data
  * @param {string} folder - Cloudinary folder (e.g. "3g-velarias/residential")
  * @param {string} publicId - Optional custom public ID
  * @returns {Promise<{url: string, thumbnailUrl: string, publicId: string}>}
+ *
+ * Optimization is done ON-DEMAND via URL transformations:
+ * - Original URL: https://res.cloudinary.com/.../image.jpg
+ * - Optimized: https://res.cloudinary.com/.../w_1200,f_auto,q_auto/.../image.jpg
+ * - Thumbnail: https://res.cloudinary.com/.../w_400,f_auto,q_auto/.../image.jpg
  */
 async function uploadImage(buffer, folder, publicId = null) {
     return new Promise((resolve, reject) => {
         const options = {
             folder,
-            format: 'webp',
-            quality: 'auto:good',
-            transformation: [
-                { width: 1200, crop: 'limit' }, // Max 1200px wide
-            ],
-            eager: [
-                { width: 400, crop: 'limit', quality: 'auto:low', format: 'webp' }, // Thumbnail
-            ],
-            eager_async: false,
+            resource_type: 'image',
+            // NO format conversion - keep original for flexibility
+            // NO eager transformations - done on-demand for speed
         };
 
         if (publicId) {
@@ -40,12 +39,23 @@ async function uploadImage(buffer, folder, publicId = null) {
         const uploadStream = cloudinary.uploader.upload_stream(options, (error, result) => {
             if (error) return reject(error);
 
-            const thumbnailUrl = result.eager && result.eager[0]
-                ? result.eager[0].secure_url
-                : result.secure_url;
+            // Base URL of uploaded image
+            const baseUrl = result.secure_url;
+
+            // Generate optimized URLs using Cloudinary transformations
+            // These are generated instantly, actual optimization happens when requested
+            const optimizedUrl = baseUrl.replace(
+                '/upload/',
+                '/upload/w_1200,c_limit,f_auto,q_auto:good/'
+            );
+
+            const thumbnailUrl = baseUrl.replace(
+                '/upload/',
+                '/upload/w_400,c_limit,f_auto,q_auto:low/'
+            );
 
             resolve({
-                url: result.secure_url,
+                url: optimizedUrl, // Serve optimized version by default
                 thumbnailUrl,
                 publicId: result.public_id,
             });
@@ -56,30 +66,32 @@ async function uploadImage(buffer, folder, publicId = null) {
 }
 
 /**
- * Upload from a file path (for migration script)
+ * Upload from a file path (for migration script) - FAST upload
  */
 async function uploadFromPath(filePath, folder) {
     return new Promise((resolve, reject) => {
         cloudinary.uploader.upload(filePath, {
             folder,
-            format: 'webp',
-            quality: 'auto:good',
-            transformation: [
-                { width: 1200, crop: 'limit' },
-            ],
-            eager: [
-                { width: 400, crop: 'limit', quality: 'auto:low', format: 'webp' },
-            ],
-            eager_async: false,
+            resource_type: 'image',
+            // Fast upload - no pre-processing
         }, (error, result) => {
             if (error) return reject(error);
 
-            const thumbnailUrl = result.eager && result.eager[0]
-                ? result.eager[0].secure_url
-                : result.secure_url;
+            const baseUrl = result.secure_url;
+
+            // Generate transformation URLs (on-demand optimization)
+            const optimizedUrl = baseUrl.replace(
+                '/upload/',
+                '/upload/w_1200,c_limit,f_auto,q_auto:good/'
+            );
+
+            const thumbnailUrl = baseUrl.replace(
+                '/upload/',
+                '/upload/w_400,c_limit,f_auto,q_auto:low/'
+            );
 
             resolve({
-                url: result.secure_url,
+                url: optimizedUrl,
                 thumbnailUrl,
                 publicId: result.public_id,
             });

@@ -6,7 +6,6 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
-const sharp = require('sharp');
 const compression = require('compression');
 const { PrismaClient } = require('@prisma/client');
 const { uploadImage } = require('./cloudinary');
@@ -86,44 +85,30 @@ const upload = multer({
 });
 
 /**
- * Process and upload image to Cloudinary
- * 1. Resize with sharp (max 1200px)
- * 2. Convert to WebP 
- * 3. Upload buffer to Cloudinary
+ * Upload image directly to Cloudinary (FAST - no local processing)
+ * Cloudinary handles all optimization automatically with transformations
+ * This prevents timeout errors on large images (8MB+)
+ *
+ * The optimization happens on Cloudinary's servers:
+ * - Original uploaded as-is (fast)
+ * - Cloudinary auto-generates WebP versions
+ * - Transformations applied on-demand via URL parameters
  */
 async function processAndUpload(fileBuffer, originalName, type) {
     const origSize = fileBuffer.length;
     const origSizeMB = (origSize / 1024 / 1024).toFixed(1);
 
-    console.log(`📸 Processing ${originalName} (${origSizeMB}MB)...`);
-
-    // Optimize with sharp - use lower quality for very large images
-    const quality = origSize > 10 * 1024 * 1024 ? 70 : 80; // 70% if >10MB
-
-    const optimizedBuffer = await sharp(fileBuffer, {
-        limitInputPixels: 268402689, // ~16k x 16k max
-        sequentialRead: true // Memory efficient streaming
-    })
-        .resize(1200, null, {
-            withoutEnlargement: true,
-            fit: 'inside'
-        })
-        .webp({
-            quality,
-            effort: 4 // 0-6, lower = faster but less compression
-        })
-        .toBuffer({ resolveWithObject: false });
+    console.log(`📸 Uploading ${originalName} (${origSizeMB}MB) directly to Cloudinary...`);
 
     const folder = `3g-velarias/${type}`;
     const baseName = path.basename(originalName, path.extname(originalName))
         .replace(/[^a-z0-9]/gi, '-').toLowerCase();
     const publicId = `${Date.now()}-${baseName}`;
 
-    const result = await uploadImage(optimizedBuffer, folder, publicId);
+    // Upload original - Cloudinary optimizes automatically
+    const result = await uploadImage(fileBuffer, folder, publicId);
 
-    const optSize = optimizedBuffer.length;
-    const savings = ((1 - optSize / origSize) * 100).toFixed(1);
-    console.log(`✅ ${originalName}: ${origSizeMB}MB → ${(optSize / 1024 / 1024).toFixed(1)}MB (${savings}% smaller, quality=${quality}%)`);
+    console.log(`✅ ${originalName}: Uploaded (${origSizeMB}MB) - Cloudinary will optimize on-demand`);
 
     return result;
 }
