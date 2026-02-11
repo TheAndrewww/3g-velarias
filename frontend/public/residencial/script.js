@@ -466,10 +466,17 @@ function initProjectModal() {
 
     // Close modal handlers
     function closeModalHandler() {
+        // PERFORMANCE FIX: Close immediately, cleanup after
         modal.classList.remove('active');
         document.body.style.overflow = '';
-        currentImages = [];
-        currentImageIndex = 0;
+
+        // Defer cleanup to avoid blocking (happens after modal is hidden)
+        setTimeout(() => {
+            currentImages = [];
+            currentImageIndex = 0;
+            // Clear image src to free memory
+            if (modalImage) modalImage.src = '';
+        }, 300); // Match CSS transition duration
     }
 
     modalClose?.addEventListener('click', closeModalHandler);

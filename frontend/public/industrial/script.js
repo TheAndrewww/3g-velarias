@@ -415,9 +415,18 @@ function initProjectModal() {
 
     // Close
     function closeModal() {
+        // PERFORMANCE FIX: Close immediately, cleanup after
         modal.classList.remove('active');
         document.body.style.overflow = '';
-        currentModalImages = [];
+
+        // Defer cleanup to avoid blocking (happens after modal is hidden)
+        const modalImage = document.getElementById('modalImage');
+        setTimeout(() => {
+            currentModalImages = [];
+            currentModalImageIndex = 0;
+            // Clear image src to free memory
+            if (modalImage) modalImage.src = '';
+        }, 300); // Match CSS transition duration
     }
 
     window.closeModal = closeModal;
