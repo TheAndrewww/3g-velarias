@@ -170,8 +170,10 @@ function showUploadProgress() {
     document.getElementById('upload-progress-modal').classList.remove('hidden');
 }
 
-function hideUploadProgress() {
+window.hideUploadProgress = function() {
     document.getElementById('upload-progress-modal').classList.add('hidden');
+    // Reset close button visibility
+    document.getElementById('close-upload-modal-btn').classList.add('hidden');
 }
 
 function updateUploadProgress(current, total, fileName, status) {
@@ -380,7 +382,7 @@ async function saveProject(e) {
 
 form.addEventListener('submit', saveProject);
 
-async function deleteProject(projectId) {
+window.deleteProject = async function(projectId) {
     if (!confirm('¿Estás seguro de eliminar este proyecto?')) return;
 
     try {
@@ -469,7 +471,7 @@ function renderProjects() {
 
 // --- Modal & Form Logic ---
 
-function editProject(projectId) {
+window.editProject = function(projectId) {
     editProjectId = projectId;
     const list = currentTab === 'residential' ? projects.residentialProjects : projects.industrialProjects;
     const project = list.find(p => p.id === projectId);
