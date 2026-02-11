@@ -1405,6 +1405,7 @@ button {
 .modal.active {
     opacity: 1;
     visibility: visible;
+    will-change: opacity, visibility;
 }
 
 .modal-overlay {
@@ -1431,6 +1432,7 @@ button {
 
 .modal.active .modal-content {
     transform: scale(1) translateY(0);
+    will-change: transform;
 }
 
 .modal-close {

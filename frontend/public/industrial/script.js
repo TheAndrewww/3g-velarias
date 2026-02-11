@@ -415,9 +415,15 @@ function initProjectModal() {
 
     // Close
     function closeModal() {
-        // PERFORMANCE FIX: Close immediately, cleanup after
-        modal.classList.remove('active');
-        document.body.style.overflow = '';
+        // PERFORMANCE FIX: Use RAF to batch DOM changes
+        requestAnimationFrame(() => {
+            modal.classList.remove('active');
+
+            // Defer body overflow change to next frame to avoid blocking close animation
+            requestAnimationFrame(() => {
+                document.body.style.overflow = '';
+            });
+        });
 
         // Defer cleanup to avoid blocking (happens after modal is hidden)
         const modalImage = document.getElementById('modalImage');
@@ -426,6 +432,10 @@ function initProjectModal() {
             currentModalImageIndex = 0;
             // Clear image src to free memory
             if (modalImage) modalImage.src = '';
+            // Remove will-change to free up resources
+            modal.style.willChange = 'auto';
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) modalContent.style.willChange = 'auto';
         }, 300); // Match CSS transition duration
     }
 
