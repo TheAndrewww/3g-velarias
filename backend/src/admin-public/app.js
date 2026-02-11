@@ -128,6 +128,54 @@ async function fetchProjects() {
     }
 }
 
+// Show/hide upload progress modal
+function showUploadProgress() {
+    document.getElementById('upload-progress-modal').classList.remove('hidden');
+}
+
+function hideUploadProgress() {
+    document.getElementById('upload-progress-modal').classList.add('hidden');
+}
+
+function updateUploadProgress(current, total, fileName, status) {
+    const percent = Math.round((current / total) * 100);
+    document.getElementById('upload-progress-bar').style.width = `${percent}%`;
+    document.getElementById('upload-progress-text').textContent = `${current} / ${total}`;
+    document.getElementById('upload-current-status').textContent =
+        status === 'uploading' ? `Subiendo: ${fileName}` :
+        status === 'success' ? `✅ ${fileName}` :
+        status === 'error' ? `❌ ${fileName}` :
+        'Preparando...';
+}
+
+function addUploadItem(fileName, status) {
+    const list = document.getElementById('upload-progress-list');
+    const item = document.createElement('div');
+    item.id = `upload-item-${fileName}`;
+    item.className = 'flex items-center gap-2 p-2 bg-gray-50 rounded';
+    item.innerHTML = `
+        <span class="text-2xl">${status === 'pending' ? '⏳' : status === 'uploading' ? '📤' : status === 'success' ? '✅' : '❌'}</span>
+        <span class="text-sm text-gray-700 flex-1 truncate">${fileName}</span>
+        <span class="text-xs text-gray-500">${status === 'pending' ? 'Esperando...' : status === 'uploading' ? 'Subiendo...' : status === 'success' ? 'Completado' : 'Error'}</span>
+    `;
+    list.appendChild(item);
+}
+
+function updateUploadItem(fileName, status, message = '') {
+    const item = document.getElementById(`upload-item-${fileName}`);
+    if (item) {
+        item.innerHTML = `
+            <span class="text-2xl">${status === 'uploading' ? '📤' : status === 'success' ? '✅' : '❌'}</span>
+            <span class="text-sm text-gray-700 flex-1 truncate">${fileName}</span>
+            <span class="text-xs ${status === 'error' ? 'text-red-600' : 'text-gray-500'}">${
+                status === 'uploading' ? 'Subiendo...' :
+                status === 'success' ? 'Completado' :
+                message || 'Error'
+            }</span>
+        `;
+    }
+}
+
 async function saveProject(e) {
     e.preventDefault();
 
@@ -139,33 +187,61 @@ async function saveProject(e) {
 
     let uploadedPaths = [];
 
-    // 1. Upload new files
+    // 1. Upload new files ONE BY ONE with visual feedback
     if (filesToUpload.length > 0) {
-        const formData = new FormData();
-        filesToUpload.forEach(file => formData.append('images', file));
+        showUploadProgress();
+        document.getElementById('upload-progress-list').innerHTML = '';
+
+        // Add all files to the list as pending
+        filesToUpload.forEach(file => addUploadItem(file.name, 'pending'));
 
         try {
-            const uploadRes = await fetch(`/api/upload?type=${currentTab}`, {
-                method: 'POST',
-                body: formData,
-                credentials: 'include'
-            });
-            if (!uploadRes.ok) {
-                if (uploadRes.status === 500) {
-                    alert('Error subiendo imágenes: La imagen es demasiado grande. El límite es 50MB por archivo.');
-                } else {
-                    const error = await uploadRes.json();
-                    alert('Error subiendo imágenes: ' + (error.error || `HTTP ${uploadRes.status}`));
+            for (let i = 0; i < filesToUpload.length; i++) {
+                const file = filesToUpload[i];
+                updateUploadProgress(i, filesToUpload.length, file.name, 'uploading');
+                updateUploadItem(file.name, 'uploading');
+
+                const formData = new FormData();
+                formData.append('images', file);
+
+                try {
+                    const uploadRes = await fetch(`/api/upload?type=${currentTab}`, {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'include'
+                    });
+
+                    if (!uploadRes.ok) {
+                        const error = await uploadRes.json();
+                        const errorMsg = error.error || `HTTP ${uploadRes.status}`;
+                        updateUploadItem(file.name, 'error', errorMsg);
+                        throw new Error(`Error en ${file.name}: ${errorMsg}`);
+                    }
+
+                    const uploadData = await uploadRes.json();
+                    if (!uploadData.success) {
+                        updateUploadItem(file.name, 'error', uploadData.error);
+                        throw new Error(`Error en ${file.name}: ${uploadData.error}`);
+                    }
+
+                    // Success! Add the uploaded path
+                    uploadedPaths.push(...uploadData.paths);
+                    updateUploadItem(file.name, 'success');
+                    updateUploadProgress(i + 1, filesToUpload.length, file.name, 'success');
+
+                } catch (fileError) {
+                    hideUploadProgress();
+                    alert(fileError.message);
+                    return;
                 }
-                return;
             }
-            const uploadData = await uploadRes.json();
-            if (!uploadData.success) {
-                alert('Error subiendo imágenes: ' + uploadData.error);
-                return;
-            }
-            uploadedPaths = uploadData.paths; // No need for '../' prefix anymore
+
+            // All uploads complete
+            updateUploadProgress(filesToUpload.length, filesToUpload.length, 'Todas las imágenes', 'success');
+            setTimeout(() => hideUploadProgress(), 1000);
+
         } catch (err) {
+            hideUploadProgress();
             alert('Error subiendo imágenes: ' + err.message);
             return;
         }
