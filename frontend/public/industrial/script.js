@@ -281,49 +281,14 @@ function updateModalImage(index) {
 
 function openProjectModal(data) {
     const modal = document.getElementById('projectModal');
+    const modalImage = document.getElementById('modalImage');
     if (!modal) return;
 
-    // Handle images
-    if (data.images) {
-        try {
-            const images = typeof data.images === 'string' ? JSON.parse(data.images) : data.images;
-            currentModalImages = images.map(img => getImageUrl(img));
-        } catch (e) {
-            currentModalImages = [getImageUrl(data.image || '')];
-        }
-    } else {
-        currentModalImages = [getImageUrl(data.image || '')];
-    }
+    // PERFORMANCE FIX: Show modal immediately, defer heavy work
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
 
-    currentModalImageIndex = 0;
-
-    // UI Updates
-    updateModalImage(0);
-
-    // Gallery Dots
-    const galleryDots = document.getElementById('galleryDots');
-    if (galleryDots) {
-        galleryDots.innerHTML = '';
-        currentModalImages.forEach((_, index) => {
-            const dot = document.createElement('button');
-            dot.className = 'gallery-dot';
-            dot.setAttribute('aria-label', `Ir a imagen ${index + 1}`);
-            if (index === 0) dot.classList.add('active');
-            dot.addEventListener('click', () => updateModalImage(index));
-            galleryDots.appendChild(dot);
-        });
-    }
-
-    // Controls Visibility
-    const galleryPrev = document.getElementById('galleryPrev');
-    const galleryNext = document.getElementById('galleryNext');
-    const hasMultiple = currentModalImages.length > 1;
-
-    if (galleryPrev) galleryPrev.style.display = hasMultiple ? 'flex' : 'none';
-    if (galleryNext) galleryNext.style.display = hasMultiple ? 'flex' : 'none';
-    if (galleryDots) galleryDots.style.display = hasMultiple ? 'flex' : 'none';
-
-    // Text Content
+    // Set text content immediately (fast)
     const fields = ['Category', 'Title', 'Description', 'Location', 'Area', 'Duration'];
     fields.forEach(field => {
         const key = field.toLowerCase();
@@ -331,9 +296,60 @@ function openProjectModal(data) {
         if (el && data[key]) el.textContent = data[key];
     });
 
-    // Show
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
+    // Show loading placeholder on image
+    if (modalImage) {
+        modalImage.style.opacity = '0.5';
+        modalImage.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23333" width="400" height="300"/%3E%3C/svg%3E';
+    }
+
+    // Defer image loading to next frame (non-blocking)
+    requestAnimationFrame(() => {
+        // Handle images
+        if (data.images) {
+            try {
+                const images = typeof data.images === 'string' ? JSON.parse(data.images) : data.images;
+                currentModalImages = images.map(img => getImageUrl(img));
+            } catch (e) {
+                currentModalImages = [getImageUrl(data.image || '')];
+            }
+        } else {
+            currentModalImages = [getImageUrl(data.image || '')];
+        }
+
+        currentModalImageIndex = 0;
+
+        // Preload first image before showing
+        const firstImage = new Image();
+        firstImage.onload = () => {
+            modalImage.src = currentModalImages[0];
+            modalImage.style.opacity = '1';
+            modalImage.style.transition = 'opacity 0.3s ease';
+        };
+        firstImage.src = currentModalImages[0];
+
+        // Gallery Dots
+        const galleryDots = document.getElementById('galleryDots');
+        if (galleryDots) {
+            galleryDots.innerHTML = '';
+            currentModalImages.forEach((_, index) => {
+                const dot = document.createElement('button');
+                dot.className = 'gallery-dot';
+                dot.setAttribute('aria-label', `Ir a imagen ${index + 1}`);
+                if (index === 0) dot.classList.add('active');
+                dot.addEventListener('click', () => updateModalImage(index));
+                galleryDots.appendChild(dot);
+            });
+        }
+
+        // Controls Visibility
+        const galleryPrev = document.getElementById('galleryPrev');
+        const galleryNext = document.getElementById('galleryNext');
+        const hasMultiple = currentModalImages.length > 1;
+
+        if (galleryPrev) galleryPrev.style.display = hasMultiple ? 'flex' : 'none';
+        if (galleryNext) galleryNext.style.display = hasMultiple ? 'flex' : 'none';
+        if (galleryDots) galleryDots.style.display = hasMultiple ? 'flex' : 'none';
+    });
 }
 
 /**

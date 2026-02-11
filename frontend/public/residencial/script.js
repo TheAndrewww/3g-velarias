@@ -384,27 +384,11 @@ function initProjectModal() {
 
     // Function to open modal with data (Exposed globally for Map)
     window.openProjectModal = (data) => {
-        // Handle images (multiple or single)
-        if (data.images) {
-            try {
-                // Check if it's already an array (from direct object) or string (from dataset)
-                const images = Array.isArray(data.images) ? data.images : JSON.parse(data.images);
-                currentImages = images.map(img => getOptimizedUrl(img));
-            } catch (e) {
-                currentImages = [getOptimizedUrl(data.image || '')];
-            }
-        } else {
-            currentImages = [getOptimizedUrl(data.image || '')];
-        }
+        // PERFORMANCE FIX: Show modal immediately, defer heavy work
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
 
-        currentImageIndex = 0;
-
-        // Populate modal content
-        updateImage(0);
-        createGalleryDots();
-        updateGalleryControls();
-
-        // Safely set text content checking if elements exist
+        // Set text content immediately (fast)
         if (document.getElementById('modalCategory')) document.getElementById('modalCategory').textContent = data.category;
         if (document.getElementById('modalTitle')) document.getElementById('modalTitle').textContent = data.title;
         if (document.getElementById('modalDescription')) document.getElementById('modalDescription').textContent = data.description;
@@ -412,9 +396,41 @@ function initProjectModal() {
         if (document.getElementById('modalArea')) document.getElementById('modalArea').textContent = data.area;
         if (document.getElementById('modalDuration')) document.getElementById('modalDuration').textContent = data.duration;
 
-        // Show modal
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
+        // Show loading placeholder on image
+        if (modalImage) {
+            modalImage.style.opacity = '0.5';
+            modalImage.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3C/svg%3E';
+        }
+
+        // Defer image loading to next frame (non-blocking)
+        requestAnimationFrame(() => {
+            // Handle images (multiple or single)
+            if (data.images) {
+                try {
+                    const images = Array.isArray(data.images) ? data.images : JSON.parse(data.images);
+                    currentImages = images.map(img => getOptimizedUrl(img));
+                } catch (e) {
+                    currentImages = [getOptimizedUrl(data.image || '')];
+                }
+            } else {
+                currentImages = [getOptimizedUrl(data.image || '')];
+            }
+
+            currentImageIndex = 0;
+
+            // Preload first image before showing
+            const firstImage = new Image();
+            firstImage.onload = () => {
+                modalImage.src = currentImages[0];
+                modalImage.style.opacity = '1';
+                modalImage.style.transition = 'opacity 0.3s ease';
+            };
+            firstImage.src = currentImages[0];
+
+            // These are fast DOM operations
+            createGalleryDots();
+            updateGalleryControls();
+        });
     };
 
     // Open modal on project click
