@@ -1590,6 +1590,47 @@ button {
     z-index: 10;
 }
 
+/* Project Navigation (between projects, not images) */
+.project-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 56px;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid var(--color-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+    cursor: pointer;
+    transition: var(--transition-medium);
+    z-index: 100;
+    box-shadow: 0 6px 25px rgba(196, 30, 58, 0.25);
+}
+
+.project-nav:hover {
+    background: var(--color-primary);
+    color: #ffffff;
+    transform: translateY(-50%) scale(1.15);
+    box-shadow: 0 8px 30px rgba(196, 30, 58, 0.4);
+}
+
+.project-nav:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.project-nav-prev {
+    left: -28px;
+}
+
+.project-nav-next {
+    right: -28px;
+}
+
 .gallery-dot {
     width: 10px;
     height: 10px;

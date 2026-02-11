@@ -261,6 +261,8 @@ function animateCounter(element) {
  */
 let currentModalImages = [];
 let currentModalImageIndex = 0;
+let currentProjectIndex = 0;
+let availableProjects = [];
 
 function updateModalImage(index) {
     const modalImage = document.getElementById('modalImage');
@@ -279,7 +281,31 @@ function updateModalImage(index) {
     }
 }
 
-function openProjectModal(data) {
+// Update project navigation buttons
+function updateProjectNavigation() {
+    const prevBtn = document.getElementById('projectNavPrev');
+    const nextBtn = document.getElementById('projectNavNext');
+
+    if (prevBtn) prevBtn.disabled = currentProjectIndex === 0;
+    if (nextBtn) nextBtn.disabled = currentProjectIndex === availableProjects.length - 1;
+}
+
+// Navigate to previous/next project
+function navigateProject(direction) {
+    const newIndex = direction === 'prev' ? currentProjectIndex - 1 : currentProjectIndex + 1;
+
+    if (newIndex >= 0 && newIndex < availableProjects.length) {
+        currentProjectIndex = newIndex;
+        openProjectModal(availableProjects[newIndex]);
+    }
+}
+
+function openProjectModal(data, projects = null, index = null) {
+    // Update available projects list if provided
+    if (projects) {
+        availableProjects = projects;
+        currentProjectIndex = index !== null ? index : 0;
+    }
     const modal = document.getElementById('projectModal');
     const modalImage = document.getElementById('modalImage');
     if (!modal) return;
@@ -349,6 +375,9 @@ function openProjectModal(data) {
         if (galleryPrev) galleryPrev.style.display = hasMultiple ? 'flex' : 'none';
         if (galleryNext) galleryNext.style.display = hasMultiple ? 'flex' : 'none';
         if (galleryDots) galleryDots.style.display = hasMultiple ? 'flex' : 'none';
+
+        // Update project navigation buttons
+        updateProjectNavigation();
     });
 }
 
@@ -367,16 +396,17 @@ function initProjectModal() {
 
     // Card Listeners (Delegation would be better but direct attach works for now)
     // Note: initDynamicProjects reures this function to attach listeners to new cards
-    projectCards.forEach(card => {
+    projectCards.forEach((card, index) => {
         // Remove existing listeners to avoid duplicates if called multiple times
         // A simple way is to clone and replace, but for now we just assume this is called fresh or we relying on garbage collection if elements are replaced.
         // Since initDynamicProjects replaces innerHTML or appends new elements, we should only attach to new ones or just re-attach.
-        // Better pattern: initDynamicProjects handles its own listeners or we use delegation. 
+        // Better pattern: initDynamicProjects handles its own listeners or we use delegation.
         // For existing architecture, we'll keep it simple.
 
         // Remove old listener if possible? No easy way without named function.
         // Let's just attach. If initDynamicProjects clears grid, it's fine.
-        card.onclick = () => openProjectModal(card.dataset);
+        const visibleProjects = Array.from(projectCards).map(c => c.dataset);
+        card.onclick = () => openProjectModal(card.dataset, visibleProjects, index);
     });
 
     // Navigation Listeners - Attach only once
@@ -441,6 +471,26 @@ function initProjectModal() {
 
     window.closeModal = closeModal;
     window.openProjectModal = openProjectModal; // Expose for Map
+
+    // Project navigation event listeners
+    const projectNavPrev = document.getElementById('projectNavPrev');
+    const projectNavNext = document.getElementById('projectNavNext');
+
+    if (!projectNavPrev?._hasListener) {
+        projectNavPrev?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            navigateProject('prev');
+        });
+        if (projectNavPrev) projectNavPrev._hasListener = true;
+    }
+
+    if (!projectNavNext?._hasListener) {
+        projectNavNext?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            navigateProject('next');
+        });
+        if (projectNavNext) projectNavNext._hasListener = true;
+    }
 }
 
 /**

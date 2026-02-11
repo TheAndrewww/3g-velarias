@@ -342,6 +342,8 @@ function initProjectModal() {
 
     let currentImages = [];
     let currentImageIndex = 0;
+    let currentProjectIndex = 0;
+    let availableProjects = [];
 
     // Function to update image display
     function updateImage(index) {
@@ -382,8 +384,33 @@ function initProjectModal() {
         });
     }
 
+    // Update project navigation buttons
+    function updateProjectNavigation() {
+        const prevBtn = document.getElementById('projectNavPrev');
+        const nextBtn = document.getElementById('projectNavNext');
+
+        if (prevBtn) prevBtn.disabled = currentProjectIndex === 0;
+        if (nextBtn) nextBtn.disabled = currentProjectIndex === availableProjects.length - 1;
+    }
+
+    // Navigate to previous/next project
+    function navigateProject(direction) {
+        const newIndex = direction === 'prev' ? currentProjectIndex - 1 : currentProjectIndex + 1;
+
+        if (newIndex >= 0 && newIndex < availableProjects.length) {
+            currentProjectIndex = newIndex;
+            window.openProjectModal(availableProjects[newIndex]);
+        }
+    }
+
     // Function to open modal with data (Exposed globally for Map)
-    window.openProjectModal = (data) => {
+    window.openProjectModal = (data, projects = null, index = null) => {
+        // Update available projects list if provided
+        if (projects) {
+            availableProjects = projects;
+            currentProjectIndex = index !== null ? index : 0;
+        }
+
         // PERFORMANCE FIX: Show modal immediately, defer heavy work
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
@@ -395,6 +422,9 @@ function initProjectModal() {
         if (document.getElementById('modalLocation')) document.getElementById('modalLocation').textContent = data.location;
         if (document.getElementById('modalArea')) document.getElementById('modalArea').textContent = data.area;
         if (document.getElementById('modalDuration')) document.getElementById('modalDuration').textContent = data.duration;
+
+        // Update project navigation buttons
+        updateProjectNavigation();
 
         // Show loading placeholder on image
         if (modalImage) {
@@ -434,9 +464,11 @@ function initProjectModal() {
     };
 
     // Open modal on project click
-    projectCards.forEach(card => {
+    projectCards.forEach((card, index) => {
         card.addEventListener('click', () => {
-            window.openProjectModal(card.dataset);
+            // Get all visible project cards datasets
+            const visibleProjects = Array.from(projectCards).map(c => c.dataset);
+            window.openProjectModal(card.dataset, visibleProjects, index);
         });
     });
 
@@ -501,6 +533,20 @@ function initProjectModal() {
 
     // Make closeModal globally available
     window.closeModal = closeModalHandler;
+
+    // Project navigation event listeners
+    const projectNavPrev = document.getElementById('projectNavPrev');
+    const projectNavNext = document.getElementById('projectNavNext');
+
+    projectNavPrev?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        navigateProject('prev');
+    });
+
+    projectNavNext?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        navigateProject('next');
+    });
 }
 
 /**
