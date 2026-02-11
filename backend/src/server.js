@@ -92,11 +92,27 @@ const upload = multer({
  * 3. Upload buffer to Cloudinary
  */
 async function processAndUpload(fileBuffer, originalName, type) {
-    // Optimize with sharp before uploading
-    const optimizedBuffer = await sharp(fileBuffer)
-        .resize(1200, null, { withoutEnlargement: true })
-        .webp({ quality: 80 })
-        .toBuffer();
+    const origSize = fileBuffer.length;
+    const origSizeMB = (origSize / 1024 / 1024).toFixed(1);
+
+    console.log(`📸 Processing ${originalName} (${origSizeMB}MB)...`);
+
+    // Optimize with sharp - use lower quality for very large images
+    const quality = origSize > 10 * 1024 * 1024 ? 70 : 80; // 70% if >10MB
+
+    const optimizedBuffer = await sharp(fileBuffer, {
+        limitInputPixels: 268402689, // ~16k x 16k max
+        sequentialRead: true // Memory efficient streaming
+    })
+        .resize(1200, null, {
+            withoutEnlargement: true,
+            fit: 'inside'
+        })
+        .webp({
+            quality,
+            effort: 4 // 0-6, lower = faster but less compression
+        })
+        .toBuffer({ resolveWithObject: false });
 
     const folder = `3g-velarias/${type}`;
     const baseName = path.basename(originalName, path.extname(originalName))
@@ -105,10 +121,9 @@ async function processAndUpload(fileBuffer, originalName, type) {
 
     const result = await uploadImage(optimizedBuffer, folder, publicId);
 
-    const origSize = fileBuffer.length;
     const optSize = optimizedBuffer.length;
     const savings = ((1 - optSize / origSize) * 100).toFixed(1);
-    console.log(`📸 ${originalName}: ${(origSize / 1024 / 1024).toFixed(1)}MB → ${(optSize / 1024 / 1024).toFixed(1)}MB (${savings}% smaller) → Cloudinary ✅`);
+    console.log(`✅ ${originalName}: ${origSizeMB}MB → ${(optSize / 1024 / 1024).toFixed(1)}MB (${savings}% smaller, quality=${quality}%)`);
 
     return result;
 }
@@ -417,8 +432,8 @@ process.on('SIGTERM', async () => {
     process.exit(0);
 });
 
-// Start Server
-app.listen(PORT, () => {
+// Start Server with increased timeout for image processing
+const server = app.listen(PORT, () => {
     console.log(`
 ╔═══════════════════════════════════════╗
 ║   3G Velarias - Backend Server       ║
@@ -435,3 +450,7 @@ app.listen(PORT, () => {
 Press Ctrl+C to stop
     `);
 });
+
+// Increase timeout to 5 minutes for large image uploads
+server.timeout = 300000; // 5 minutes (default is 2 minutes)
+server.keepAliveTimeout = 310000; // Slightly longer than timeout
