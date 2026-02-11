@@ -1683,8 +1683,8 @@ button {
 .modal-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.9);
-    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.95);
+    /* backdrop-filter: blur(10px); - REMOVED for performance */
 }
 
 .modal-content {
