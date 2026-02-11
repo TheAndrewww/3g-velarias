@@ -128,6 +128,36 @@ async function fetchProjects() {
     }
 }
 
+// Compress image if >10MB (Cloudinary free tier limit)
+async function compressImageIfNeeded(file) {
+    const maxSizeMB = 10;
+    const fileSizeMB = file.size / 1024 / 1024;
+
+    if (fileSizeMB <= maxSizeMB) {
+        return file; // No compression needed
+    }
+
+    console.log(`🗜️ Compressing ${file.name} from ${fileSizeMB.toFixed(1)}MB...`);
+
+    const options = {
+        maxSizeMB: 9.5, // Target size slightly below 10MB limit
+        maxWidthOrHeight: 4096, // Max dimension (4K resolution)
+        useWebWorker: true,
+        fileType: file.type, // Keep original format
+        initialQuality: 0.85 // Good quality (0-1 scale)
+    };
+
+    try {
+        const compressedFile = await imageCompression(file, options);
+        const compressedSizeMB = compressedFile.size / 1024 / 1024;
+        console.log(`✅ Compressed to ${compressedSizeMB.toFixed(1)}MB (${((1 - compressedFile.size / file.size) * 100).toFixed(0)}% reduction)`);
+        return compressedFile;
+    } catch (error) {
+        console.error('Compression failed:', error);
+        throw new Error(`Error comprimiendo ${file.name}: ${error.message}`);
+    }
+}
+
 // Show/hide upload progress modal
 function showUploadProgress() {
     document.getElementById('upload-progress-modal').classList.remove('hidden');
@@ -142,7 +172,8 @@ function updateUploadProgress(current, total, fileName, status) {
     document.getElementById('upload-progress-bar').style.width = `${percent}%`;
     document.getElementById('upload-progress-text').textContent = `${current} / ${total}`;
     document.getElementById('upload-current-status').textContent =
-        status === 'uploading' ? `Subiendo: ${fileName}` :
+        status === 'compressing' ? `🗜️ Comprimiendo: ${fileName}` :
+        status === 'uploading' ? `📤 Subiendo: ${fileName}` :
         status === 'success' ? `✅ ${fileName}` :
         status === 'error' ? `❌ ${fileName}` :
         'Preparando...';
@@ -165,9 +196,15 @@ function updateUploadItem(fileName, status, message = '') {
     const item = document.getElementById(`upload-item-${fileName}`);
     if (item) {
         item.innerHTML = `
-            <span class="text-2xl">${status === 'uploading' ? '📤' : status === 'success' ? '✅' : '❌'}</span>
+            <span class="text-2xl">${
+                status === 'compressing' ? '🗜️' :
+                status === 'uploading' ? '📤' :
+                status === 'success' ? '✅' :
+                '❌'
+            }</span>
             <span class="text-sm text-gray-700 flex-1 truncate">${fileName}</span>
             <span class="text-xs ${status === 'error' ? 'text-red-600' : 'text-gray-500'}">${
+                status === 'compressing' ? message || 'Comprimiendo...' :
                 status === 'uploading' ? 'Subiendo...' :
                 status === 'success' ? 'Completado' :
                 message || 'Error'
@@ -187,45 +224,43 @@ async function saveProject(e) {
 
     let uploadedPaths = [];
 
-    // 1. Upload new files ONE BY ONE with visual feedback
+    // 1. Upload new files ONE BY ONE with visual feedback and auto-compression
     if (filesToUpload.length > 0) {
-        // Pre-check: Warn about files >10MB (Cloudinary free limit)
-        const oversizedFiles = filesToUpload.filter(f => f.size > 10 * 1024 * 1024);
-        if (oversizedFiles.length > 0) {
-            const fileList = oversizedFiles.map(f => `• ${f.name} (${(f.size / 1024 / 1024).toFixed(1)}MB)`).join('\n');
-            const proceed = confirm(
-                `⚠️ Las siguientes imágenes exceden el límite de 10MB de Cloudinary:\n\n${fileList}\n\n` +
-                `Estas imágenes serán OMITIDAS automáticamente.\n\n` +
-                `¿Deseas continuar subiendo el resto de imágenes?`
-            );
-            if (!proceed) return;
-        }
-
         showUploadProgress();
         document.getElementById('upload-progress-list').innerHTML = '';
 
         // Add all files to the list as pending
-        filesToUpload.forEach(file => {
-            const isOversized = file.size > 10 * 1024 * 1024;
-            addUploadItem(file.name, isOversized ? 'error' : 'pending');
-            if (isOversized) {
-                updateUploadItem(file.name, 'error', `${(file.size / 1024 / 1024).toFixed(1)}MB > 10MB`);
-            }
-        });
+        filesToUpload.forEach(file => addUploadItem(file.name, 'pending'));
 
-        const filesToActuallyUpload = filesToUpload.filter(f => f.size <= 10 * 1024 * 1024);
         let successCount = 0;
         let errorCount = 0;
+        let compressedCount = 0;
 
-        for (let i = 0; i < filesToActuallyUpload.length; i++) {
-            const file = filesToActuallyUpload[i];
-            updateUploadProgress(i, filesToActuallyUpload.length, file.name, 'uploading');
-            updateUploadItem(file.name, 'uploading');
-
-            const formData = new FormData();
-            formData.append('images', file);
+        for (let i = 0; i < filesToUpload.length; i++) {
+            const file = filesToUpload[i];
+            const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
+            let fileToUpload = file;
 
             try {
+                // Step 1: Compress if needed (>10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                    updateUploadProgress(i, filesToUpload.length, file.name, 'compressing');
+                    updateUploadItem(file.name, 'compressing', `${fileSizeMB}MB → Comprimiendo...`);
+
+                    fileToUpload = await compressImageIfNeeded(file);
+                    const compressedSizeMB = (fileToUpload.size / 1024 / 1024).toFixed(1);
+                    compressedCount++;
+
+                    updateUploadItem(file.name, 'compressing', `${fileSizeMB}MB → ${compressedSizeMB}MB`);
+                }
+
+                // Step 2: Upload to Cloudinary
+                updateUploadProgress(i, filesToUpload.length, file.name, 'uploading');
+                updateUploadItem(file.name, 'uploading');
+
+                const formData = new FormData();
+                formData.append('images', fileToUpload);
+
                 const uploadRes = await fetch(`/api/upload?type=${currentTab}`, {
                     method: 'POST',
                     body: formData,
@@ -250,7 +285,7 @@ async function saveProject(e) {
                 // Success! Add the uploaded path
                 uploadedPaths.push(...uploadData.paths);
                 updateUploadItem(file.name, 'success');
-                updateUploadProgress(i + 1, filesToActuallyUpload.length, file.name, 'success');
+                updateUploadProgress(i + 1, filesToUpload.length, file.name, 'success');
                 successCount++;
 
             } catch (fileError) {
@@ -261,11 +296,10 @@ async function saveProject(e) {
         }
 
         // Show final summary
-        const skippedCount = filesToUpload.length - filesToActuallyUpload.length;
         updateUploadProgress(
-            filesToActuallyUpload.length,
-            filesToActuallyUpload.length,
-            `✅ ${successCount} exitosas, ❌ ${errorCount} errores${skippedCount > 0 ? `, ⏭️ ${skippedCount} omitidas` : ''}`,
+            filesToUpload.length,
+            filesToUpload.length,
+            `✅ ${successCount} exitosas${compressedCount > 0 ? ` (🗜️ ${compressedCount} comprimidas)` : ''}, ❌ ${errorCount} errores`,
             'success'
         );
 
