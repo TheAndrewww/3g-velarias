@@ -702,7 +702,7 @@ function initDynamicProjects() {
 
     if (!projectsGrid || !residentialProjects || residentialProjects.length === 0) return;
 
-    const ITEMS_PER_PAGE = 6;
+    const ITEMS_PER_PAGE = 8;
     let visibleCount = 0;
     let currentFilter = 'todos';
     let filteredProjects = [...residentialProjects];
