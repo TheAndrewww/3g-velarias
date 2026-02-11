@@ -148,7 +148,14 @@ async function compressImageIfNeeded(file) {
     };
 
     try {
-        const compressedFile = await imageCompression(file, options);
+        const compressedBlob = await imageCompression(file, options);
+
+        // Convert Blob back to File with original filename
+        const compressedFile = new File([compressedBlob], file.name, {
+            type: compressedBlob.type || file.type,
+            lastModified: Date.now()
+        });
+
         const compressedSizeMB = compressedFile.size / 1024 / 1024;
         console.log(`✅ Compressed to ${compressedSizeMB.toFixed(1)}MB (${((1 - compressedFile.size / file.size) * 100).toFixed(0)}% reduction)`);
         return compressedFile;
@@ -300,14 +307,17 @@ async function saveProject(e) {
             filesToUpload.length,
             filesToUpload.length,
             `✅ ${successCount} exitosas${compressedCount > 0 ? ` (🗜️ ${compressedCount} comprimidas)` : ''}, ❌ ${errorCount} errores`,
-            'success'
+            errorCount === 0 ? 'success' : 'error'
         );
 
-        // Auto-hide after 3 seconds if all successful
+        // Show close button
+        document.getElementById('close-upload-modal-btn').classList.remove('hidden');
+
+        // Auto-hide after 2 seconds if all successful
         if (errorCount === 0) {
             setTimeout(() => hideUploadProgress(), 2000);
         }
-        // If there were errors, keep modal open so user can see what failed
+        // If there were errors, keep modal open so user can manually close and review
     }
 
     // Combine paths
