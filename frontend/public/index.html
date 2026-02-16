@@ -159,7 +159,19 @@
             cursor: pointer;
         }
 
-        /* Background Images */
+        /* Background Videos */
+        .split-video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+            opacity: 0.5;
+            transition: var(--transition);
+        }
+
+        /* Background Images (kept as fallback) */
         .split::before {
             content: "";
             position: absolute;
@@ -167,7 +179,8 @@
             background-size: cover;
             background-position: center;
             transition: var(--transition);
-            z-index: 1;
+            z-index: 0;
+            opacity: 0;
         }
 
         /* Hover Overlay Effect */
@@ -188,7 +201,7 @@
 
         .left::before {
             background-image: url('https://images.unsplash.com/photo-1628624747186-a941c476b7ef?q=80&w=2070&auto=format&fit=crop');
-            opacity: 0.5;
+            opacity: 0;
             transform: scale(1.05);
         }
 
@@ -196,9 +209,8 @@
             color: var(--color-primary);
         }
 
-        /* Hover State Left */
-        .left:hover::before {
-            transform: scale(1);
+        /* Hover State Left - Video effects */
+        .left:hover .split-video {
             opacity: 0.8;
             filter: brightness(1.1);
         }
@@ -236,18 +248,21 @@
 
         .right::before {
             background-image: url('https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
-            opacity: 0.3;
+            opacity: 0;
             transform: scale(1.05);
             filter: grayscale(100%);
+        }
+
+        .right .split-video {
+            filter: grayscale(50%);
         }
 
         .right h2 {
             color: #ccc;
         }
 
-        /* Hover State Right */
-        .right:hover::before {
-            transform: scale(1);
+        /* Hover State Right - Video effects */
+        .right:hover .split-video {
             opacity: 0.6;
             filter: grayscale(0%);
         }
@@ -367,6 +382,15 @@
 <body>
     <!-- Left Side: Residencial -->
     <a href="residencial/index.html" class="split left" data-color="#ffffff">
+        <!-- Background Video -->
+        <video class="split-video"
+               poster="https://res.cloudinary.com/dd93jrilg/image/upload/w_1200,c_limit,f_auto,q_auto:good/v1771257954/3g-velarias/posters/j5pjuvifvwyjhioxyexq.jpg"
+               loop
+               muted
+               playsinline>
+            <source src="https://res.cloudinary.com/dd93jrilg/video/upload/v1769638701/Cochera_molyxg.mov" type="video/mp4">
+        </video>
+
         <div class="content">
             <h2>Hogar & Jardín</h2>
             <h1>Residencial</h1>
@@ -386,6 +410,15 @@
 
     <!-- Right Side: Industrial -->
     <a href="industrial/index.html" class="split right" data-color="#0f0f0f">
+        <!-- Background Video -->
+        <video class="split-video"
+               poster="https://res.cloudinary.com/dd93jrilg/image/upload/w_1200,c_limit,f_auto,q_auto:good/v1771257955/3g-velarias/posters/j0kt5abxr1cjdrqrvy2u.jpg"
+               loop
+               muted
+               playsinline>
+            <source src="https://res.cloudinary.com/dd93jrilg/video/upload/v1769623918/Canchas_deportivas_jwx6gx.mov" type="video/mp4">
+        </video>
+
         <!-- Grid Pattern Overlay -->
         <div class="right-bg-overlay"></div>
 
@@ -404,26 +437,51 @@
             const leftSplit = document.querySelector('.split.left');
             const rightSplit = document.querySelector('.split.right');
 
+            // Get video elements
+            const leftVideo = leftSplit.querySelector('.split-video');
+            const rightVideo = rightSplit.querySelector('.split-video');
+
             // --- Hover Effects (Class Switching) ---
 
             // Hover Residential (Left)
             leftSplit.addEventListener('mouseenter', () => {
                 logoContainer.classList.add('state-res');
                 logoContainer.classList.remove('state-ind');
+                // Play video on hover
+                if (leftVideo) {
+                    leftVideo.play().catch(e => console.log('Video play failed:', e));
+                }
             });
 
             // Hover Industrial (Right)
             rightSplit.addEventListener('mouseenter', () => {
                 logoContainer.classList.remove('state-res');
                 logoContainer.classList.add('state-ind');
+                // Play video on hover
+                if (rightVideo) {
+                    rightVideo.play().catch(e => console.log('Video play failed:', e));
+                }
             });
 
             // Mouse Leave (Reset)
-            [leftSplit, rightSplit].forEach(split => {
-                split.addEventListener('mouseleave', () => {
-                    logoContainer.classList.remove('state-res');
-                    logoContainer.classList.remove('state-ind');
-                });
+            leftSplit.addEventListener('mouseleave', () => {
+                logoContainer.classList.remove('state-res');
+                logoContainer.classList.remove('state-ind');
+                // Pause and reset video
+                if (leftVideo) {
+                    leftVideo.pause();
+                    leftVideo.currentTime = 0;
+                }
+            });
+
+            rightSplit.addEventListener('mouseleave', () => {
+                logoContainer.classList.remove('state-res');
+                logoContainer.classList.remove('state-ind');
+                // Pause and reset video
+                if (rightVideo) {
+                    rightVideo.pause();
+                    rightVideo.currentTime = 0;
+                }
             });
 
             // --- Navigation Logic ---
