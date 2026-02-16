@@ -563,6 +563,14 @@
                     }, 800);
                 });
             });
+
+            // --- Fix: Clean up transition overlay on back navigation ---
+            window.addEventListener('pageshow', (event) => {
+                // Remove any leftover transition overlays (from bfcache or back button)
+                document.querySelectorAll('.page-transition').forEach(el => el.remove());
+                // Ensure body is visible
+                document.body.style.opacity = '1';
+            });
         });
     </script>
 </body>
