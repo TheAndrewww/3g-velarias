@@ -19,6 +19,19 @@ function getImageUrl(imagePath) {
     return API_BASE_URL + '/' + imagePath;
 }
 
+// Helper: Optimize Cloudinary image URL for modals (high quality but compressed)
+function getModalImageUrl(imagePath) {
+    const url = getImageUrl(imagePath);
+
+    // Only optimize Cloudinary images
+    if (url.includes('cloudinary.com') && url.includes('/upload/')) {
+        // Insert transformations: w_1200 max width, auto format, auto quality
+        return url.replace('/upload/', '/upload/w_1200,f_auto,q_auto/');
+    }
+
+    return url;
+}
+
 // Helper: get optimized WebP URL for a backend image
 function getOptimizedUrl(imagePath) {
     if (!imagePath || imagePath.startsWith('http')) return getImageUrl(imagePath);
@@ -331,34 +344,44 @@ function openProjectModal(data, projects = null, index = null) {
         if (el && data[key]) el.textContent = data[key];
     });
 
-    // Show loading placeholder on image
-    if (modalImage) {
-        modalImage.style.opacity = '0.5';
-        modalImage.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23333" width="400" height="300"/%3E%3C/svg%3E';
+    // Show loading state
+    const modalGallery = modal.querySelector('.modal-gallery');
+    if (modalImage && modalGallery) {
+        modalGallery.classList.add('loading');
+        modalImage.style.opacity = '0';
     }
 
     // Defer image loading to next frame (non-blocking)
     requestAnimationFrame(() => {
-        // Handle images
+        // Handle images - use optimized URLs for modal
         if (data.images) {
             try {
                 const images = typeof data.images === 'string' ? JSON.parse(data.images) : data.images;
-                currentModalImages = images.map(img => getImageUrl(img));
+                currentModalImages = images.map(img => getModalImageUrl(img));
             } catch (e) {
-                currentModalImages = [getImageUrl(data.image || '')];
+                currentModalImages = [getModalImageUrl(data.image || '')];
             }
         } else {
-            currentModalImages = [getImageUrl(data.image || '')];
+            currentModalImages = [getModalImageUrl(data.image || '')];
         }
 
         currentModalImageIndex = 0;
 
         // Preload first image before showing
         const firstImage = new Image();
+        const modalGallery = modal.querySelector('.modal-gallery');
+
         firstImage.onload = () => {
             modalImage.src = currentModalImages[0];
             modalImage.style.opacity = '1';
-            modalImage.style.transition = 'opacity 0.3s ease';
+            modalImage.style.transition = 'opacity 0.4s ease';
+            if (modalGallery) modalGallery.classList.remove('loading');
+        };
+        firstImage.onerror = () => {
+            // Fallback if optimized image fails
+            modalImage.src = currentModalImages[0];
+            modalImage.style.opacity = '1';
+            if (modalGallery) modalGallery.classList.remove('loading');
         };
         firstImage.src = currentModalImages[0];
 
@@ -416,6 +439,16 @@ function initProjectModal() {
         // Let's just attach. If initDynamicProjects clears grid, it's fine.
         const visibleProjects = Array.from(projectCards).map(c => c.dataset);
         card.onclick = () => openProjectModal(card.dataset, visibleProjects, index);
+
+        // Preload modal image on hover for instant modal opening
+        card.onmouseenter = () => {
+            const imageUrl = card.dataset.image;
+            if (imageUrl && !card._imagePreloaded) {
+                const preloadImg = new Image();
+                preloadImg.src = getModalImageUrl(imageUrl);
+                card._imagePreloaded = true; // Mark as preloaded to avoid duplicate requests
+            }
+        };
     });
 
     // Navigation Listeners - Attach only once

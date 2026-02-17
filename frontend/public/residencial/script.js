@@ -19,6 +19,19 @@ function getImageUrl(imagePath) {
     return API_BASE_URL + '/' + imagePath;
 }
 
+// Helper: Optimize Cloudinary image URL for modals (high quality but compressed)
+function getModalImageUrl(imagePath) {
+    const url = getImageUrl(imagePath);
+
+    // Only optimize Cloudinary images
+    if (url.includes('cloudinary.com') && url.includes('/upload/')) {
+        // Insert transformations: w_1200 max width, auto format, auto quality
+        return url.replace('/upload/', '/upload/w_1200,f_auto,q_auto/');
+    }
+
+    return url;
+}
+
 // Helper: get optimized WebP URL for a backend image
 function getOptimizedUrl(imagePath) {
     if (!imagePath || imagePath.startsWith('http')) return getImageUrl(imagePath);
@@ -426,24 +439,25 @@ function initProjectModal() {
         // Update project navigation buttons
         updateProjectNavigation();
 
-        // Show loading placeholder on image
-        if (modalImage) {
-            modalImage.style.opacity = '0.5';
-            modalImage.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3C/svg%3E';
+        // Show loading state
+        const modalGallery = modal.querySelector('.modal-gallery');
+        if (modalImage && modalGallery) {
+            modalGallery.classList.add('loading');
+            modalImage.style.opacity = '0';
         }
 
         // Defer image loading to next frame (non-blocking)
         requestAnimationFrame(() => {
-            // Handle images (multiple or single)
+            // Handle images - use optimized URLs for modal
             if (data.images) {
                 try {
                     const images = Array.isArray(data.images) ? data.images : JSON.parse(data.images);
-                    currentImages = images.map(img => getOptimizedUrl(img));
+                    currentImages = images.map(img => getModalImageUrl(img));
                 } catch (e) {
-                    currentImages = [getOptimizedUrl(data.image || '')];
+                    currentImages = [getModalImageUrl(data.image || '')];
                 }
             } else {
-                currentImages = [getOptimizedUrl(data.image || '')];
+                currentImages = [getModalImageUrl(data.image || '')];
             }
 
             currentImageIndex = 0;
@@ -453,7 +467,14 @@ function initProjectModal() {
             firstImage.onload = () => {
                 modalImage.src = currentImages[0];
                 modalImage.style.opacity = '1';
-                modalImage.style.transition = 'opacity 0.3s ease';
+                modalImage.style.transition = 'opacity 0.4s ease';
+                if (modalGallery) modalGallery.classList.remove('loading');
+            };
+            firstImage.onerror = () => {
+                // Fallback if optimized image fails
+                modalImage.src = currentImages[0];
+                modalImage.style.opacity = '1';
+                if (modalGallery) modalGallery.classList.remove('loading');
             };
             firstImage.src = currentImages[0];
 
@@ -469,6 +490,16 @@ function initProjectModal() {
             // Get all visible project cards datasets
             const visibleProjects = Array.from(projectCards).map(c => c.dataset);
             window.openProjectModal(card.dataset, visibleProjects, index);
+        });
+
+        // Preload modal image on hover for instant modal opening
+        card.addEventListener('mouseenter', () => {
+            const imageUrl = card.dataset.image;
+            if (imageUrl && !card._imagePreloaded) {
+                const preloadImg = new Image();
+                preloadImg.src = getModalImageUrl(imageUrl);
+                card._imagePreloaded = true; // Mark as preloaded to avoid duplicate requests
+            }
         });
     });
 
