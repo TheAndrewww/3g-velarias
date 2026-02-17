@@ -469,6 +469,14 @@ function initProjectModal() {
                 modalImage.style.opacity = '1';
                 modalImage.style.transition = 'opacity 0.4s ease';
                 if (modalGallery) modalGallery.classList.remove('loading');
+
+                // Preload remaining gallery images in background (after first image loads)
+                if (currentImages.length > 1) {
+                    currentImages.slice(1).forEach((imgUrl) => {
+                        const preloadImg = new Image();
+                        preloadImg.src = imgUrl;
+                    });
+                }
             };
             firstImage.onerror = () => {
                 // Fallback if optimized image fails
