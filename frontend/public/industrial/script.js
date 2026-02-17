@@ -69,8 +69,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     initPageTransition();
     initProjectFilters();
     initDynamicProjects();
-    initMap();
     initServiceVideos();
+
+    // Defer heavy Globe initialization to reduce TBT
+    setTimeout(() => {
+        // Use requestIdleCallback if available for even better performance
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => initMap());
+        } else {
+            initMap();
+        }
+    }, 3500);
 });
 
 /**
