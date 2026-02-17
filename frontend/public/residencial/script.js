@@ -812,6 +812,9 @@ function initDynamicProjects() {
         // Re-attach modal listeners to new cards
         initProjectModal();
 
+        // Intelligent image preloading
+        initImagePreloading();
+
         // Update button visibility
         if (visibleCount >= filteredProjects.length) {
             loadMoreBtn.style.display = 'none';
@@ -870,6 +873,46 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+/**
+ * Intelligent Image Preloading with Intersection Observer
+ * Preloads modal images when project cards are about to be visible
+ */
+function initImagePreloading() {
+    const projectCards = document.querySelectorAll('.project-card[data-image]');
+
+    if (!projectCards.length) return;
+
+    // Create Intersection Observer
+    const preloadObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && !entry.target._imagePreloaded) {
+                const imageUrl = entry.target.dataset.image;
+
+                if (imageUrl) {
+                    // Preload the modal image
+                    const preloadImg = new Image();
+                    preloadImg.src = getModalImageUrl(imageUrl);
+
+                    // Mark as preloaded to avoid duplicate requests
+                    entry.target._imagePreloaded = true;
+
+                    // Stop observing this card
+                    preloadObserver.unobserve(entry.target);
+                }
+            }
+        });
+    }, {
+        root: null, // viewport
+        rootMargin: '200px', // Start preloading 200px before card is visible
+        threshold: 0.01 // Trigger as soon as 1% is visible
+    });
+
+    // Observe all project cards
+    projectCards.forEach(card => {
+        preloadObserver.observe(card);
+    });
+}
 
 /**
  * Interactive Map (Bajío Region)
