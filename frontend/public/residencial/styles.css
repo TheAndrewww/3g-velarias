@@ -54,6 +54,7 @@
 html {
     scroll-behavior: smooth;
     font-size: 16px;
+    overflow-x: hidden;
 }
 
 body {
@@ -1058,9 +1059,9 @@ button {
 .form-group label {
     display: block;
     font-size: 0.875rem;
-    font-weight: 500;
+    font-weight: 600;
     margin-bottom: 8px;
-    color: var(--color-text-secondary);
+    color: var(--color-text-primary);
 }
 
 .form-group input,
@@ -1317,6 +1318,27 @@ button {
         grid-column: span 1;
     }
 
+    /* Horizontal scroll for project filters on mobile */
+    .project-filters {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        justify-content: flex-start;
+        padding-bottom: 8px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        /* Firefox */
+    }
+
+    .project-filters::-webkit-scrollbar {
+        display: none;
+    }
+
+    .filter-btn {
+        flex-shrink: 0;
+        padding: 8px 18px;
+        font-size: 0.85rem;
+    }
+
     .about-stats {
         flex-wrap: wrap;
         gap: 24px;
@@ -1339,6 +1361,10 @@ button {
 @media (max-width: 480px) {
     .container {
         padding: 0 16px;
+    }
+
+    .hero-title {
+        font-size: clamp(2rem, 8vw, 2.5rem);
     }
 
     /* Header Mobile Adjustments */
@@ -1750,6 +1776,9 @@ button {
     border-top: 1px solid var(--color-border);
     border-bottom: 1px solid var(--color-border);
     padding: 120px 0;
+    overflow: hidden;
+    /* Prevent map SVG from causing horizontal scroll */
+    position: relative;
 }
 
 /* ========================================
