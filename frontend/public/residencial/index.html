@@ -54,45 +54,97 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Schema Markup (LocalBusiness) -->
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <!-- Schema Markup (LocalBusiness + Services) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "HomeAndConstructionBusiness",
       "name": "3G Velarias Residencial",
-      "description": "Soluciones premium en velarias, pérgolas y cubiertas ligeras para tu hogar. Más de 15 años transformando espacios residenciales.",
-      "image": "https://3gvelarias.com/Logo-3G.svg",
+      "description": "Soluciones premium en velarias, pérgolas y cubiertas ligeras para tu hogar. Más de 20 años transformando espacios residenciales en Guanajuato y el Bajío.",
+      "image": "https://3gvelarias.com/residencial/icono-residencial.svg",
       "telephone": "+524621490313",
       "email": "ventas@arquitecturatextil3g.com",
       "address": {
         "@type": "PostalAddress",
         "streetAddress": "Paseo de la Altiplanicie 280, Villas de Irapuato",
         "addressLocality": "Irapuato",
-        "addressRegion": "Gto",
+        "addressRegion": "Guanajuato",
         "postalCode": "36670",
         "addressCountry": "MX"
       },
-      "url": "https://3gvelarias.com/residencial/",
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 20.6736,
+        "longitude": -101.3468
+      },
+      "url": "https://www.3gvelarias.com/residencial/",
       "priceRange": "$$",
+      "areaServed": [
+        { "@type": "State", "name": "Guanajuato" },
+        { "@type": "State", "name": "Querétaro" },
+        { "@type": "State", "name": "Jalisco" },
+        { "@type": "State", "name": "Aguascalientes" }
+      ],
       "openingHoursSpecification": {
         "@type": "OpeningHoursSpecification",
-        "dayOfWeek": [
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday"
-        ],
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
         "opens": "09:00",
         "closes": "18:00"
+      },
+      "sameAs": [
+        "https://www.facebook.com/3gvelarias",
+        "https://www.instagram.com/3gvelarias",
+        "https://www.tiktok.com/@3gvelarias"
+      ],
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Servicios Residenciales",
+        "itemListElement": [
+          {
+            "@type": "OfferCatalog",
+            "name": "Velarias para Patios y Terrazas",
+            "itemListElement": [{
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Velarias para Patios y Terrazas",
+                "description": "Cubiertas tensadas para patios, terrazas y roof gardens residenciales. Protección solar y diseño arquitectónico."
+              }
+            }]
+          },
+          {
+            "@type": "OfferCatalog",
+            "name": "Cubiertas para Cocheras",
+            "itemListElement": [{
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Cubiertas para Cocheras",
+                "description": "Velarias y pérgolas para cocheras residenciales con protección UV y lluvia."
+              }
+            }]
+          },
+          {
+            "@type": "OfferCatalog",
+            "name": "Velarias para Jardines",
+            "itemListElement": [{
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Velarias para Jardines",
+                "description": "Cubiertas decorativas para jardines y áreas verdes residenciales. Integración con paisajismo."
+              }
+            }]
+          }
+        ]
       }
     }
     </script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>

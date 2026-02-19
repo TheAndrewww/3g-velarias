@@ -54,62 +54,108 @@
     <link rel="preconnect" href="https://unpkg.com">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Schema Markup (LocalBusiness) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "LocalBusiness",
-      "name": "3G Velarias - Industrial",
-      "image": "https://3gvelarias.com/Logo-3G.svg",
-      "telephone": "+524621490313",
-      "email": "ventas@arquitecturatextil3g.com",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "Paseo de la Altiplanicie 280",
-        "addressLocality": "Irapuato",
-        "addressRegion": "GTO",
-        "postalCode": "36670",
-        "addressCountry": "MX"
-      },
-      "url": "https://3gvelarias.com/industrial/",
-      "priceRange": "$$$"
-    }
-    </script>
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <!-- Schema Markup (LocalBusiness + Services) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "ConstructionBusiness",
       "name": "3G Velarias Industrial",
-      "description": "Soluciones industriales en velarias y cubiertas ligeras. Estacionamientos, escuelas, canchas deportivas y proyectos especiales.",
+      "description": "Soluciones industriales en velarias y cubiertas tensadas de alto rendimiento. Estacionamientos, escuelas, canchas deportivas y proyectos comerciales con ingeniería certificada.",
+      "image": "https://3gvelarias.com/industrial/Icono-industrial.svg",
       "telephone": "+524621490313",
+      "email": "ventas@arquitecturatextil3g.com",
       "address": {
         "@type": "PostalAddress",
         "streetAddress": "Paseo de la Altiplanicie 280, Villas de Irapuato",
         "addressLocality": "Irapuato",
-        "addressRegion": "Gto",
+        "addressRegion": "Guanajuato",
         "postalCode": "36670",
         "addressCountry": "MX"
       },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 20.6736,
+        "longitude": -101.3468
+      },
+      "url": "https://www.3gvelarias.com/industrial/",
+      "priceRange": "$$$",
+      "areaServed": [
+        { "@type": "State", "name": "Guanajuato" },
+        { "@type": "State", "name": "Querétaro" },
+        { "@type": "State", "name": "Jalisco" },
+        { "@type": "State", "name": "Aguascalientes" },
+        { "@type": "Country", "name": "México" }
+      ],
       "openingHoursSpecification": {
         "@type": "OpeningHoursSpecification",
-        "dayOfWeek": [
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday"
-        ],
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
         "opens": "09:00",
         "closes": "18:00"
       },
       "sameAs": [
         "https://www.facebook.com/3gvelarias",
-        "https://www.linkedin.com/company/3gvelarias"
-      ]
+        "https://www.instagram.com/3gvelarias",
+        "https://www.tiktok.com/@3gvelarias"
+      ],
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Servicios Industriales",
+        "itemListElement": [
+          {
+            "@type": "OfferCatalog",
+            "name": "Velarias para Estacionamientos",
+            "itemListElement": [{
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Velarias para Estacionamientos",
+                "description": "Cubiertas tensadas para estacionamientos comerciales e industriales con protección UV y resistencia a vientos."
+              }
+            }]
+          },
+          {
+            "@type": "OfferCatalog",
+            "name": "Cubiertas para Escuelas",
+            "itemListElement": [{
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Cubiertas para Escuelas y Colegios",
+                "description": "Velarias y cubiertas ligeras para patios, canchas y áreas comunes de instituciones educativas."
+              }
+            }]
+          },
+          {
+            "@type": "OfferCatalog",
+            "name": "Cubiertas para Canchas Deportivas",
+            "itemListElement": [{
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Cubiertas para Canchas Deportivas",
+                "description": "Estructura tensada para canchas de fútbol, tenis, pádel y áreas deportivas al aire libre."
+              }
+            }]
+          },
+          {
+            "@type": "OfferCatalog",
+            "name": "Cubiertas para Restaurantes",
+            "itemListElement": [{
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Cubiertas para Restaurantes y Terrazas Comerciales",
+                "description": "Velarias decorativas y funcionales para restaurantes, cafeterías y espacios gastronómicos."
+              }
+            }]
+          }
+        ]
+      }
     }
     </script>
+
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>

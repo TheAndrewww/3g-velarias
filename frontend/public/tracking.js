@@ -291,6 +291,45 @@
     }
 
     // =========================================================
+    // 8. SCROLL DEPTH TRACKING (25/50/75/100%)
+    // =========================================================
+    function initScrollDepthTracking() {
+        var thresholds = [25, 50, 75, 100];
+        var triggered = {};
+
+        function getScrollPercent() {
+            var h = document.documentElement;
+            var b = document.body;
+            var st = h.scrollTop || b.scrollTop;
+            var sh = h.scrollHeight || b.scrollHeight;
+            var ch = h.clientHeight;
+            return Math.round((st / (sh - ch)) * 100);
+        }
+
+        var ticking = false;
+        window.addEventListener('scroll', function () {
+            if (!ticking) {
+                window.requestAnimationFrame(function () {
+                    var pct = getScrollPercent();
+                    thresholds.forEach(function (t) {
+                        if (pct >= t && !triggered[t]) {
+                            triggered[t] = true;
+                            window.dataLayer.push({
+                                'event': 'scroll_depth',
+                                'scroll_percentage': t,
+                                'page_type': getPageType(),
+                                'page_path': window.location.pathname
+                            });
+                        }
+                    });
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        }, { passive: true });
+    }
+
+    // =========================================================
     // INIT ON DOM READY
     // =========================================================
     if (document.readyState === 'loading') {
@@ -306,6 +345,7 @@
         initWhatsAppTracking();
         initContactTracking();
         initModalTracking();
+        initScrollDepthTracking();
     }
 
 })();
