@@ -17,20 +17,41 @@
     <!-- End Google Tag Manager -->
 
     <script>
-        // Conversion Event: Generate Lead (pushes to GTM dataLayer)
-        window.dataLayer = window.dataLayer || [];
-        window.dataLayer.push({
-            'event': 'generate_lead',
-            'category': 'Engagement',
-            'label': 'Form Submission Success',
-            'value': 1
-        });
+        // Enhanced Conversion Event: Generate Lead
+        (function () {
+            window.dataLayer = window.dataLayer || [];
+
+            // Recover UTM and session data
+            var utmSource = '(direct)', utmMedium = '(none)', utmCampaign = '(none)';
+            var pageType = 'unknown', projectType = 'unknown', gclid = '';
+            try {
+                utmSource = sessionStorage.getItem('utm_source') || '(direct)';
+                utmMedium = sessionStorage.getItem('utm_medium') || '(none)';
+                utmCampaign = sessionStorage.getItem('utm_campaign') || '(none)';
+                gclid = sessionStorage.getItem('gclid') || '';
+                pageType = sessionStorage.getItem('form_page_type') || 'unknown';
+                projectType = sessionStorage.getItem('last_project_type') || 'unknown';
+            } catch (e) { }
+
+            window.dataLayer.push({
+                'event': 'generate_lead',
+                'category': 'Conversion',
+                'label': 'Form Submission Success',
+                'value': 1,
+                'page_type': pageType,
+                'project_type': projectType,
+                'utm_source': utmSource,
+                'utm_medium': utmMedium,
+                'utm_campaign': utmCampaign,
+                'has_gclid': !!gclid
+            });
+        })();
     </script>
 
 
     <title>¡Gracias! | 3G Velarias</title>
     <meta name="robots" content="noindex, nofollow">
-    <link rel="icon" type="image/svg+xml" href="Logo-3G.svg">
+    <link rel="icon" type="image/svg+xml" href="industrial/Icono-industrial.svg">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {

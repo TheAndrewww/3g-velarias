@@ -16,62 +16,7 @@
         })(window, document, 'script', 'dataLayer', 'GTM-5SSKTHPT');</script>
     <!-- End Google Tag Manager -->
 
-    <script>
-        // Event Tracking for 3G Velarias Industrial (pushes to GTM dataLayer)
-        document.addEventListener('DOMContentLoaded', function () {
-            // 1. WhatsApp Clicks
-            document.querySelectorAll('a[href*="wa.me"]').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    window.dataLayer = window.dataLayer || [];
-                    window.dataLayer.push({
-                        'event': 'contact_whatsapp',
-                        'category': 'Contact',
-                        'label': 'WhatsApp Click',
-                        'page_type': 'industrial'
-                    });
-                });
-            });
-
-            // 2. Phone Calls
-            document.querySelectorAll('a[href^="tel:"]').forEach(link => {
-                link.addEventListener('click', () => {
-                    window.dataLayer = window.dataLayer || [];
-                    window.dataLayer.push({
-                        'event': 'contact_phone',
-                        'category': 'Contact',
-                        'label': link.getAttribute('href').replace('tel:', ''),
-                        'page_type': 'industrial'
-                    });
-                });
-            });
-
-            // 3. Email Clicks
-            document.querySelectorAll('a[href^="mailto:"]').forEach(link => {
-                link.addEventListener('click', () => {
-                    window.dataLayer = window.dataLayer || [];
-                    window.dataLayer.push({
-                        'event': 'contact_email',
-                        'category': 'Contact',
-                        'label': 'Email Click',
-                        'page_type': 'industrial'
-                    });
-                });
-            });
-
-            // 4. Form Submissions
-            document.querySelectorAll('form').forEach(form => {
-                form.addEventListener('submit', () => {
-                    window.dataLayer = window.dataLayer || [];
-                    window.dataLayer.push({
-                        'event': 'form_start',
-                        'category': 'Form',
-                        'label': form.getAttribute('id') || 'Contact Form',
-                        'page_type': 'industrial'
-                    });
-                });
-            });
-        });
-    </script>
+    <meta name="page-type" content="industrial">
 
 
     <title>3G Velarias | Soluciones Industriales y Comerciales - Cotiza Hoy</title>
@@ -801,6 +746,7 @@
             });
         })();
     </script>
+    <script src="../tracking.js"></script>
     <script src="script.js"></script>
 </body>
 
