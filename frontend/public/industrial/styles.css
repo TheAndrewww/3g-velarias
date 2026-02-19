@@ -1599,11 +1599,17 @@ button {
         padding-top: 85px;
         min-height: auto;
         padding-bottom: 40px;
-        overflow: visible;
+        overflow-x: hidden;
     }
 
     .hero-content {
         padding-top: 10px;
+        margin-left: 0;
+        padding: 10px 20px 0;
+        max-width: 100%;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
     }
 
     .hero-badge {
@@ -1611,19 +1617,31 @@ button {
     }
 
     .hero-title {
-        font-size: 2.5rem;
+        font-size: 2.2rem;
         margin-bottom: 16px;
+        letter-spacing: -1px;
+        word-wrap: break-word;
     }
 
     .hero-subtitle {
-        font-size: 1rem;
+        font-size: 0.95rem;
         margin-bottom: 24px;
+        max-width: 100%;
     }
 
     .hero-cta {
         flex-direction: column;
-        gap: 12px;
-        margin-bottom: 32px;
+        gap: 10px;
+        margin-bottom: 28px;
+        width: 100%;
+    }
+
+    .hero-cta .btn {
+        width: 100%;
+        justify-content: center;
+        box-sizing: border-box;
+        font-size: 0.9rem;
+        padding: 14px 20px;
     }
 
     .btn {
@@ -1631,12 +1649,19 @@ button {
         justify-content: center;
     }
 
+    /* Reorder: carousel first, stats second */
+    .hero-carousel {
+        order: 1;
+    }
+
     .hero-stats {
+        order: 2;
         flex-direction: row;
         flex-wrap: wrap;
         gap: 20px;
         justify-content: space-between;
         width: 100%;
+        margin-top: 24px;
     }
 
     .hero-stat {
