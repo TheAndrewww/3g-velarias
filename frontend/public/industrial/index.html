@@ -201,7 +201,7 @@
     </header>
 
     <!-- Hero Section -->
-    <section class="hero" id="inicio">
+    <section class="hero" id="inicio" data-section="industrial-inicio">
         <div id="map" class="hero-map"></div>
         <div class="hero-grid-overlay"></div>
 
@@ -241,7 +241,7 @@
     </section>
 
     <!-- Services Section -->
-    <section class="services" id="servicios">
+    <section class="services" id="servicios" data-section="industrial-servicios">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Servicios Industriales</span>
@@ -366,7 +366,7 @@
     </section>
 
     <!-- Projects Section -->
-    <section class="projects" id="proyectos">
+    <section class="projects" id="proyectos" data-section="industrial-proyectos">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Portafolio Comercial</span>
@@ -558,7 +558,7 @@
 
 
     <!-- Contact Section -->
-    <section class="contact" id="contacto">
+    <section class="contact" id="contacto" data-section="industrial-contacto">
         <div class="container">
             <div class="contact-wrapper">
                 <div class="contact-info" data-aos="fade-right">
@@ -681,7 +681,7 @@
     </section>
 
     <!-- Footer -->
-    <footer class="footer">
+    <footer class="footer" data-section="industrial-footer">
         <div class="container">
             <div class="footer-main">
                 <div class="footer-brand">
@@ -774,6 +774,33 @@
 
 
 
+    <!-- Section Visibility Tracking for Google Ads -->
+    <script>
+        (function () {
+            var tracked = {};
+            var observer = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        var section = entry.target.dataset.section;
+                        if (section && !tracked[section]) {
+                            tracked[section] = true;
+                            window.dataLayer = window.dataLayer || [];
+                            window.dataLayer.push({
+                                'event': 'section_view',
+                                'section_name': section,
+                                'page_type': 'industrial',
+                                'page_path': window.location.pathname
+                            });
+                        }
+                    }
+                });
+            }, { threshold: 0.3 });
+
+            document.querySelectorAll('[data-section]').forEach(function (el) {
+                observer.observe(el);
+            });
+        })();
+    </script>
     <script src="script.js"></script>
 </body>
 

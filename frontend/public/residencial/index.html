@@ -185,7 +185,7 @@
     </header>
 
     <!-- Hero Section -->
-    <section class="hero" id="inicio">
+    <section class="hero" id="inicio" data-section="residencial-inicio">
         <div class="hero-bg"></div>
         <canvas id="hero-particles"></canvas>
         <div class="hero-overlay"></div>
@@ -229,7 +229,7 @@
     </section>
 
     <!-- Services Section -->
-    <section class="services" id="servicios">
+    <section class="services" id="servicios" data-section="residencial-servicios">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Nuestros Servicios</span>
@@ -326,7 +326,7 @@
     </section>
 
     <!-- Projects Section -->
-    <section class="projects" id="proyectos">
+    <section class="projects" id="proyectos" data-section="residencial-proyectos">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Portafolio</span>
@@ -434,7 +434,7 @@
 
 
     <!-- Coverage Section -->
-    <section class="section bg-muted" id="cobertura">
+    <section class="section bg-muted" id="cobertura" data-section="residencial-cobertura">
         <div class="container">
             <div class="section-header text-center">
                 <span class="section-subtitle">Zona de Servicio</span>
@@ -451,7 +451,7 @@
     </section>
 
     <!-- Contact Section -->
-    <section class="contact" id="contacto">
+    <section class="contact" id="contacto" data-section="residencial-contacto">
         <div class="container">
             <div class="contact-grid">
                 <div class="contact-info" data-aos="fade-right">
@@ -554,7 +554,7 @@
     </section>
 
     <!-- Footer -->
-    <footer class="footer">
+    <footer class="footer" data-section="residencial-footer">
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-brand">
@@ -638,6 +638,33 @@
             duration: 800,
             once: true,
         });
+    </script>
+    <!-- Section Visibility Tracking for Google Ads -->
+    <script>
+        (function () {
+            var tracked = {};
+            var observer = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        var section = entry.target.dataset.section;
+                        if (section && !tracked[section]) {
+                            tracked[section] = true;
+                            window.dataLayer = window.dataLayer || [];
+                            window.dataLayer.push({
+                                'event': 'section_view',
+                                'section_name': section,
+                                'page_type': 'residential',
+                                'page_path': window.location.pathname
+                            });
+                        }
+                    }
+                });
+            }, { threshold: 0.3 });
+
+            document.querySelectorAll('[data-section]').forEach(function (el) {
+                observer.observe(el);
+            });
+        })();
     </script>
     <script src="script.js"></script>
 </body>

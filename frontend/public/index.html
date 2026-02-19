@@ -21,7 +21,7 @@
         content="Especialistas en Velarias, Pérgolas y Cubiertas Tensadas. Soluciones Residenciales e Industriales de alta calidad en México.">
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="#C41E3A">
-    <link rel="icon" type="image/svg+xml" href="Logo-3G.svg">
+    <link rel="icon" type="image/svg+xml" href="industrial/Icono-industrial.svg">
     <link rel="canonical" href="https://3gvelarias.com/">
 
     <!-- Open Graph / Facebook -->
@@ -438,7 +438,7 @@
     <!-- End Google Tag Manager (noscript) -->
 
     <!-- Left Side: Residencial -->
-    <a href="residencial/" class="split left" data-color="#ffffff">
+    <a href="residencial/" class="split left" data-color="#ffffff" data-section="landing-residencial">
         <!-- Background Video -->
         <video class="split-video"
             poster="https://res.cloudinary.com/dd93jrilg/image/upload/w_1200,c_limit,f_auto,q_auto:good/v1771257954/3g-velarias/posters/j5pjuvifvwyjhioxyexq.jpg"
@@ -465,7 +465,7 @@
     </div>
 
     <!-- Right Side: Industrial -->
-    <a href="industrial/" class="split right" data-color="#0f0f0f">
+    <a href="industrial/" class="split right" data-color="#0f0f0f" data-section="landing-industrial">
         <!-- Background Video -->
         <video class="split-video"
             poster="https://res.cloudinary.com/dd93jrilg/image/upload/w_1200,c_limit,f_auto,q_auto:good/v1771257955/3g-velarias/posters/j0kt5abxr1cjdrqrvy2u.jpg"
@@ -572,6 +572,23 @@
                 document.body.style.opacity = '1';
             });
         });
+    </script>
+    <!-- Section Tracking for Google Ads -->
+    <script>
+        (function () {
+            // Track which split side the user interacts with
+            document.querySelectorAll('[data-section]').forEach(function (el) {
+                el.addEventListener('mouseenter', function () {
+                    window.dataLayer = window.dataLayer || [];
+                    window.dataLayer.push({
+                        'event': 'section_hover',
+                        'section_name': el.dataset.section,
+                        'page_type': 'landing',
+                        'page_path': window.location.pathname
+                    });
+                });
+            });
+        })();
     </script>
 </body>
 
