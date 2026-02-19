@@ -83,6 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initProjectFilters();
     initDynamicProjects();
     initServiceVideos();
+    initHeroCarousel();
 
     // Defer heavy Globe initialization to reduce TBT
     setTimeout(() => {
@@ -846,8 +847,83 @@ style.textContent = `
 document.head.appendChild(style);
 
 /**
- * 3D Globe Animation (Hero Background)
+ * Mobile Hero Project Carousel (replaces globe on mobile)
  */
+function initHeroCarousel() {
+    // Only activate on mobile
+    if (window.innerWidth >= 768) return;
+
+    const container = document.getElementById('heroCarousel');
+    if (!container || !industrialProjects || industrialProjects.length === 0) return;
+
+    // Take up to 12 projects for the carousel
+    const projects = industrialProjects.slice(0, 12);
+
+    // Build card HTML
+    const buildCard = (project) => {
+        const thumbnailUrl = getThumbnailUrl(project.image);
+        const category = project.category
+            ? project.category.charAt(0).toUpperCase() + project.category.slice(1)
+            : '';
+        return `
+            <div class="hero-carousel-card" data-project-title="${project.title}">
+                <img class="hero-carousel-card-img" src="${thumbnailUrl}" alt="${project.title}" loading="lazy" width="220" height="130">
+                <div class="hero-carousel-card-body">
+                    ${category ? `<span class="hero-carousel-card-cat">${category}</span>` : ''}
+                    <h3 class="hero-carousel-card-title">${project.title}</h3>
+                    <div class="hero-carousel-card-loc">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        ${project.location}
+                    </div>
+                </div>
+            </div>
+        `;
+    };
+
+    // Create track with duplicated items for seamless loop
+    const cardsHTML = projects.map(buildCard).join('');
+    const track = document.createElement('div');
+    track.className = 'hero-carousel-track';
+    track.innerHTML = cardsHTML + cardsHTML; // Duplicate for infinite scroll
+
+    // Set animation duration based on number of cards
+    const cardWidth = 220 + 14; // card width + gap
+    const totalWidth = projects.length * cardWidth;
+    const speed = 40; // pixels per second
+    const duration = totalWidth / speed;
+    container.style.setProperty('--carousel-duration', `${duration}s`);
+
+    container.appendChild(track);
+
+    // Pause on touch
+    let touchActive = false;
+    container.addEventListener('touchstart', () => {
+        track.classList.add('paused');
+        touchActive = true;
+    }, { passive: true });
+
+    container.addEventListener('touchend', () => {
+        setTimeout(() => {
+            track.classList.remove('paused');
+            touchActive = false;
+        }, 1500);
+    }, { passive: true });
+
+    // Card click -> open project modal
+    container.addEventListener('click', (e) => {
+        const card = e.target.closest('.hero-carousel-card');
+        if (!card) return;
+        const title = card.dataset.projectTitle;
+        const project = industrialProjects.find(p => p.title === title);
+        if (project && typeof window.openProjectModal === 'function') {
+            window.openProjectModal(project);
+        }
+    });
+}
+
 /**
  * 3D Globe Animation (Hero Background)
  */
