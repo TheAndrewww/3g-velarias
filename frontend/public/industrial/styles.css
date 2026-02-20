@@ -1445,6 +1445,10 @@ button {
         --section-padding: 80px 0;
     }
 
+    .header {
+        animation: none;
+    }
+
     .nav {
         position: fixed;
         top: 0;
