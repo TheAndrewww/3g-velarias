@@ -1454,9 +1454,11 @@ button {
         background: var(--color-bg-dark);
         flex-direction: column;
         justify-content: center;
+        align-items: center;
         gap: 24px;
         transform: translateX(100%);
         transition: var(--transition-medium);
+        z-index: 1000;
     }
 
     .nav.active {
