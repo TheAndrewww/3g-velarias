@@ -848,6 +848,7 @@ document.head.appendChild(style);
 
 /**
  * Mobile Hero Project Carousel (replaces globe on mobile)
+ * Uses native scroll for swipe support + JS auto-scroll
  */
 function initHeroCarousel() {
     // Only activate on mobile
@@ -888,31 +889,61 @@ function initHeroCarousel() {
     const track = document.createElement('div');
     track.className = 'hero-carousel-track';
     track.innerHTML = cardsHTML + cardsHTML; // Duplicate for infinite scroll
-
-    // Set animation duration based on number of cards
-    const cardWidth = 220 + 14; // card width + gap
-    const totalWidth = projects.length * cardWidth;
-    const speed = 40; // pixels per second
-    const duration = totalWidth / speed;
-    container.style.setProperty('--carousel-duration', `${duration}s`);
-
     container.appendChild(track);
 
+    // Auto-scroll via JS (scrollLeft)
+    const speed = 0.5; // pixels per frame (~30px/s at 60fps)
+    let isUserScrolling = false;
+    let resumeTimeout = null;
+    let animationId = null;
+
+    function autoScroll() {
+        if (!isUserScrolling) {
+            container.scrollLeft += speed;
+            // Loop: when we've scrolled past all original cards, jump back
+            const halfWidth = track.scrollWidth / 2;
+            if (container.scrollLeft >= halfWidth) {
+                container.scrollLeft -= halfWidth;
+            }
+        }
+        animationId = requestAnimationFrame(autoScroll);
+    }
+
+    // Start auto-scroll
+    animationId = requestAnimationFrame(autoScroll);
+
     // Pause on touch
-    let touchActive = false;
     container.addEventListener('touchstart', () => {
-        track.classList.add('paused');
-        touchActive = true;
+        isUserScrolling = true;
+        if (resumeTimeout) clearTimeout(resumeTimeout);
     }, { passive: true });
 
     container.addEventListener('touchend', () => {
-        setTimeout(() => {
-            track.classList.remove('paused');
-            touchActive = false;
-        }, 1500);
+        if (resumeTimeout) clearTimeout(resumeTimeout);
+        resumeTimeout = setTimeout(() => {
+            isUserScrolling = false;
+        }, 3000); // Resume auto-scroll after 3 seconds
     }, { passive: true });
 
-    // Card click -> open project modal
+    // Also handle mouse interactions (for desktop testing)
+    container.addEventListener('mousedown', () => {
+        isUserScrolling = true;
+        if (resumeTimeout) clearTimeout(resumeTimeout);
+    });
+
+    container.addEventListener('mouseup', () => {
+        if (resumeTimeout) clearTimeout(resumeTimeout);
+        resumeTimeout = setTimeout(() => {
+            isUserScrolling = false;
+        }, 3000);
+    });
+
+    // Card click -> open project modal (only if not swiping)
+    let touchStartX = 0;
+    container.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+
     container.addEventListener('click', (e) => {
         const card = e.target.closest('.hero-carousel-card');
         if (!card) return;
