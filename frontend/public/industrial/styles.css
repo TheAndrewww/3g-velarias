@@ -2271,7 +2271,6 @@ button {
         overflow-y: hidden;
         position: relative;
         -webkit-overflow-scrolling: touch;
-        scroll-behavior: smooth;
         scrollbar-width: none;
         -ms-overflow-style: none;
         -webkit-mask-image: linear-gradient(to right,
