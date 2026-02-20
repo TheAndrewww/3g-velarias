@@ -1493,6 +1493,80 @@ button {
         gap: 32px;
     }
 
+    /* Hero Mobile Adjustments — must be at 768px to match carousel */
+    .hero {
+        align-items: flex-start;
+        padding-top: 85px;
+        min-height: auto;
+        padding-bottom: 40px;
+        overflow-x: hidden;
+    }
+
+    .hero-content {
+        margin-left: 0;
+        padding: 10px 20px 0;
+        max-width: 100%;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .hero-title {
+        font-size: 2.2rem;
+        margin-bottom: 16px;
+        letter-spacing: -1px;
+        word-wrap: break-word;
+    }
+
+    .hero-subtitle {
+        font-size: 0.95rem;
+        margin-bottom: 24px;
+        max-width: 100%;
+    }
+
+    .hero-cta {
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 28px;
+        width: 100%;
+    }
+
+    .hero-cta .btn {
+        width: 100%;
+        justify-content: center;
+        box-sizing: border-box;
+        font-size: 0.9rem;
+        padding: 14px 20px;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Reorder: carousel first, stats second */
+    .hero-carousel {
+        order: 1;
+    }
+
+    .hero-stats {
+        order: 2;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: space-between;
+        width: 100%;
+        margin-top: 24px;
+    }
+
+    .hero-stat-number {
+        font-size: 2rem;
+    }
+
+    .hero-stat-label {
+        font-size: 0.75rem;
+    }
+
     .services-grid {
         grid-template-columns: 1fr;
     }
@@ -1595,21 +1669,7 @@ button {
 
     /* Hero Mobile Adjustments */
     .hero {
-        align-items: flex-start;
-        padding-top: 85px;
-        min-height: auto;
-        padding-bottom: 40px;
-        overflow-x: hidden;
-    }
-
-    .hero-content {
-        padding-top: 10px;
-        margin-left: 0;
-        padding: 10px 20px 0;
-        max-width: 100%;
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
+        padding-top: 80px;
     }
 
     .hero-badge {
@@ -1617,56 +1677,7 @@ button {
     }
 
     .hero-title {
-        font-size: 2.2rem;
-        margin-bottom: 16px;
-        letter-spacing: -1px;
-        word-wrap: break-word;
-    }
-
-    .hero-subtitle {
-        font-size: 0.95rem;
-        margin-bottom: 24px;
-        max-width: 100%;
-    }
-
-    .hero-cta {
-        flex-direction: column;
-        gap: 10px;
-        margin-bottom: 28px;
-        width: 100%;
-    }
-
-    .hero-cta .btn {
-        width: 100%;
-        justify-content: center;
-        box-sizing: border-box;
-        font-size: 0.9rem;
-        padding: 14px 20px;
-    }
-
-    .btn {
-        width: 100%;
-        justify-content: center;
-    }
-
-    /* Reorder: carousel first, stats second */
-    .hero-carousel {
-        order: 1;
-    }
-
-    .hero-stats {
-        order: 2;
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 20px;
-        justify-content: space-between;
-        width: 100%;
-        margin-top: 24px;
-    }
-
-    .hero-stat {
-        flex: 1;
-        min-width: 80px;
+        font-size: 2rem;
     }
 
     .hero-stat-number {
