@@ -188,6 +188,7 @@ app.get('/api/projects', async (req, res) => {
             description: p.description,
             image: p.image,
             images: p.images,
+            showInGlobe: p.showInGlobe,
             ...(p.coordinates.length > 0 && { coordinates: p.coordinates }),
         });
 
@@ -230,6 +231,7 @@ app.post('/api/projects', jwtAuth, async (req, res) => {
                 image: body.image || '',
                 images: body.images || [],
                 coordinates: body.coordinates || [],
+                showInGlobe: body.showInGlobe !== undefined ? body.showInGlobe : true,
             },
         });
 
@@ -327,6 +329,7 @@ app.put('/api/projects/:id', jwtAuth, async (req, res) => {
                 image: body.image || existing.image,
                 images: body.images || existing.images,
                 coordinates: body.coordinates || existing.coordinates,
+                showInGlobe: body.showInGlobe !== undefined ? body.showInGlobe : existing.showInGlobe,
             },
         });
 

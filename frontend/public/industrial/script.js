@@ -968,8 +968,8 @@ function initMap() {
     // Ensure Globe is defined. If not, we might need to wait or it's a script load issue.
     if (!mapContainer || typeof Globe === 'undefined' || typeof industrialProjects === 'undefined') return;
 
-    // Filter valid projects
-    const validProjects = industrialProjects.filter(p => p.coordinates);
+    // Filter valid projects (must have coordinates and showInGlobe !== false)
+    const validProjects = industrialProjects.filter(p => p.coordinates && p.showInGlobe !== false);
 
     // Create Info Card Overlay
     const infoCard = document.createElement('div');

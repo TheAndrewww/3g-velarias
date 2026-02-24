@@ -21,6 +21,7 @@ model Project {
   coordinates Float[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  showInGlobe Boolean  @default(true)
 
   @@index([type])
   @@index([category])

@@ -59,7 +59,7 @@ async function loadConfig() {
 }
 
 // Hacer switchTab global para onclick en HTML
-window.switchTab = function(tab) {
+window.switchTab = function (tab) {
     currentTab = tab;
 
     // Update Theme
@@ -170,7 +170,7 @@ function showUploadProgress() {
     document.getElementById('upload-progress-modal').classList.remove('hidden');
 }
 
-window.hideUploadProgress = function() {
+window.hideUploadProgress = function () {
     document.getElementById('upload-progress-modal').classList.add('hidden');
     // Reset close button visibility
     document.getElementById('close-upload-modal-btn').classList.add('hidden');
@@ -182,10 +182,10 @@ function updateUploadProgress(current, total, fileName, status) {
     document.getElementById('upload-progress-text').textContent = `${current} / ${total}`;
     document.getElementById('upload-current-status').textContent =
         status === 'compressing' ? `🗜️ Comprimiendo: ${fileName}` :
-        status === 'uploading' ? `📤 Subiendo: ${fileName}` :
-        status === 'success' ? `✅ ${fileName}` :
-        status === 'error' ? `❌ ${fileName}` :
-        'Preparando...';
+            status === 'uploading' ? `📤 Subiendo: ${fileName}` :
+                status === 'success' ? `✅ ${fileName}` :
+                    status === 'error' ? `❌ ${fileName}` :
+                        'Preparando...';
 }
 
 function addUploadItem(fileName, status) {
@@ -205,18 +205,16 @@ function updateUploadItem(fileName, status, message = '') {
     const item = document.getElementById(`upload-item-${fileName}`);
     if (item) {
         item.innerHTML = `
-            <span class="text-2xl">${
-                status === 'compressing' ? '🗜️' :
+            <span class="text-2xl">${status === 'compressing' ? '🗜️' :
                 status === 'uploading' ? '📤' :
-                status === 'success' ? '✅' :
-                '❌'
+                    status === 'success' ? '✅' :
+                        '❌'
             }</span>
             <span class="text-sm text-gray-700 flex-1 truncate">${fileName}</span>
-            <span class="text-xs ${status === 'error' ? 'text-red-600' : 'text-gray-500'}">${
-                status === 'compressing' ? message || 'Comprimiendo...' :
+            <span class="text-xs ${status === 'error' ? 'text-red-600' : 'text-gray-500'}">${status === 'compressing' ? message || 'Comprimiendo...' :
                 status === 'uploading' ? 'Subiendo...' :
-                status === 'success' ? 'Completado' :
-                message || 'Error'
+                    status === 'success' ? 'Completado' :
+                        message || 'Error'
             }</span>
         `;
     }
@@ -349,6 +347,7 @@ async function saveProject(e) {
             if (!isNaN(lat) && !isNaN(lng)) {
                 newProject.coordinates = [lat, lng];
             }
+            newProject.showInGlobe = document.getElementById('showInGlobe').checked;
         }
 
         const url = editProjectId !== null
@@ -382,7 +381,7 @@ async function saveProject(e) {
 
 form.addEventListener('submit', saveProject);
 
-window.deleteProject = async function(projectId) {
+window.deleteProject = async function (projectId) {
     if (!confirm('¿Estás seguro de eliminar este proyecto?')) return;
 
     try {
@@ -398,6 +397,38 @@ window.deleteProject = async function(projectId) {
         alert('¡Proyecto eliminado!');
     } catch (err) {
         alert('Error al eliminar: ' + err.message);
+    }
+}
+
+window.toggleGlobeVisibility = async function (projectId, toggleEl) {
+    const list = currentTab === 'residential' ? projects.residentialProjects : projects.industrialProjects;
+    const project = list.find(p => p.id === projectId);
+    if (!project) return;
+
+    const originalState = project.showInGlobe !== false;
+    const newState = toggleEl.checked;
+
+    // Optimistic UI update
+    project.showInGlobe = newState;
+
+    try {
+        const res = await fetch(`/api/projects/${projectId}?type=${currentTab}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ showInGlobe: newState }),
+            credentials: 'include'
+        });
+
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+        // Successfully updated on server
+    } catch (err) {
+        console.error('Error toggling visibility:', err);
+        // Revert on failure
+        project.showInGlobe = originalState;
+        toggleEl.checked = originalState;
+        alert('Error al cambiar la visibilidad. Intente de nuevo.');
     }
 }
 
@@ -442,6 +473,23 @@ function renderProjects() {
             imgDisplayUrl = imgDisplayUrl.replace(/^\.\.\//, '/').replace(/^images\//, '/images/');
         }
 
+        let globeToggleHtml = '';
+        if (currentTab === 'industrial' && project.coordinates && project.coordinates.length === 2) {
+            const isChecked = project.showInGlobe !== false ? 'checked' : '';
+            globeToggleHtml = `
+                <div class="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between" onclick="event.stopPropagation()">
+                    <span class="text-xs text-gray-500 font-medium flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Globo 3D
+                    </span>
+                    <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle" id="toggle-${project.id}" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 top-0 transition-transform duration-200" ${isChecked} onchange="toggleGlobeVisibility(${project.id}, this)">
+                        <label for="toggle-${project.id}" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                </div>
+            `;
+        }
+
         card.innerHTML = `
             <div class="relative h-48 overflow-hidden">
                 <img src="${imgDisplayUrl}" alt="${project.title}" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" onerror="this.src='https://placehold.co/400x300?text=Sin+Imagen'">
@@ -449,19 +497,24 @@ function renderProjects() {
                     ${project.category}
                 </div>
             </div>
-            <div class="p-5">
-                <h3 class="font-bold text-lg text-gray-800 mb-1 leading-tight">${project.title}</h3>
-                <p class="text-sm text-gray-500 mb-4 flex items-center gap-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    ${project.location}
-                </p>
+            <div class="p-5 flex flex-col h-[calc(100%-12rem)]">
+                <div>
+                    <h3 class="font-bold text-lg text-gray-800 mb-1 leading-tight">${project.title}</h3>
+                    <p class="text-sm text-gray-500 mb-4 flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        ${project.location}
+                    </p>
+                </div>
 
-                <div class="flex justify-between items-center pt-4 border-t border-gray-100">
-                    <span class="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-1 rounded">${project.area}</span>
-                    <div class="flex gap-2">
-                        <button onclick="editProject(${project.id})" class="hidden">Editar</button>
-                        <button onclick="event.stopPropagation(); deleteProject(${project.id})" class="text-red-500 hover:text-red-700 text-sm font-medium hover:underline">Eliminar</button>
+                <div class="mt-auto">
+                    <div class="flex justify-between items-center pt-4 border-t border-gray-100">
+                        <span class="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-1 rounded">${project.area}</span>
+                        <div class="flex gap-2">
+                            <button onclick="editProject(${project.id})" class="hidden">Editar</button>
+                            <button onclick="event.stopPropagation(); deleteProject(${project.id})" class="text-red-500 hover:text-red-700 text-sm font-medium hover:underline">Eliminar</button>
+                        </div>
                     </div>
+                    ${globeToggleHtml}
                 </div>
             </div>
         `;
@@ -471,7 +524,7 @@ function renderProjects() {
 
 // --- Modal & Form Logic ---
 
-window.editProject = function(projectId) {
+window.editProject = function (projectId) {
     editProjectId = projectId;
     const list = currentTab === 'residential' ? projects.residentialProjects : projects.industrialProjects;
     const project = list.find(p => p.id === projectId);
@@ -486,14 +539,17 @@ window.editProject = function(projectId) {
     form.querySelector('[name="duration"]').value = project.duration;
     form.querySelector('[name="description"]').value = project.description;
 
-    if (currentTab === 'industrial' && project.coordinates) {
-        form.querySelector('[name="lat"]').value = project.coordinates[0];
-        form.querySelector('[name="lng"]').value = project.coordinates[1];
+    if (currentTab === 'industrial') {
+        if (project.coordinates) {
+            form.querySelector('[name="lat"]').value = project.coordinates[0];
+            form.querySelector('[name="lng"]').value = project.coordinates[1];
 
-        // Update map marker after modal is visible
-        setTimeout(() => {
-            updateMapMarker();
-        }, 400);
+            // Update map marker after modal is visible
+            setTimeout(() => {
+                updateMapMarker();
+            }, 400);
+        }
+        document.getElementById('showInGlobe').checked = project.showInGlobe !== false;
     }
 
     // Load existing images
@@ -507,7 +563,7 @@ window.editProject = function(projectId) {
 }
 
 // Hacer openModal global para onclick en HTML
-window.openModal = function(isEdit = false) {
+window.openModal = function (isEdit = false) {
     if (!isEdit) {
         editProjectId = null;
         form.reset();
@@ -553,7 +609,7 @@ window.openModal = function(isEdit = false) {
 }
 
 // Hacer closeModal global para onclick en HTML
-window.closeModal = function() {
+window.closeModal = function () {
     modal.classList.add('opacity-0');
     modalContent.classList.add('scale-95');
     setTimeout(() => {
@@ -588,7 +644,7 @@ function renderGallery() {
     currentImages.forEach((item, index) => {
         const div = document.createElement('div');
         div.className = 'relative group h-24 rounded-lg overflow-hidden shadow-sm border-2 draggable-image ' +
-                        (index === 0 ? 'border-red-500' : 'border-gray-200');
+            (index === 0 ? 'border-red-500' : 'border-gray-200');
 
         let src = '';
         if (item instanceof File) {
@@ -668,7 +724,7 @@ function updateCategoryFilter() {
     });
 }
 
-window.clearFilters = function() {
+window.clearFilters = function () {
     searchTerm = '';
     categoryFilter = '';
     searchInput.value = '';
@@ -742,7 +798,7 @@ function setupImageDragDrop() {
             animation: 150,
             ghostClass: 'sortable-ghost',
             filter: '.add-image-btn',
-            onEnd: function(evt) {
+            onEnd: function (evt) {
                 // Reorder the currentImages array
                 const movedItem = currentImages.splice(evt.oldIndex, 1)[0];
                 currentImages.splice(evt.newIndex, 0, movedItem);
