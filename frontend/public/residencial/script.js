@@ -54,66 +54,67 @@ function getThumbnailUrl(imagePath) {
 // Global variable to store projects loaded from API
 let residentialProjects = [
     {
+        category: 'pergola',
+        title: 'Marco Rígido con Cubierta Traslúcida',
+        location: 'Irapuato, Gto',
+        description: 'Estructura metálica con marco rígido en acabado negro, diseñada para cubrir pasillo residencial. Incorpora paneles traslúcidos que permiten el paso de luz natural.',
+        image: 'https://res.cloudinary.com/dd93jrilg/image/upload/w_1200,c_limit,f_auto,q_auto:good/v1770915908/3g-velarias/residential/1770915904738-proyecto-61-1.jpg',
+        coordinates: [20.6736, -101.3468],
+        area: '25 m²',
+        duration: '2 semanas'
+    },
+    {
         category: 'terraza',
-        title: 'Terraza Residencial Campestre',
+        title: 'Velarias en Área de Alberca',
         location: 'Irapuato, Gto.',
-        description: 'Cubierta tipo velaria para zona de asador y convivencia. Diseño ligero que maximiza la sombra sin obstruir vistas.',
-        image: 'https://res.cloudinary.com/dd93jrilg/image/upload/v1769624000/Terraza1.jpg',
+        description: 'Velarias con malla sombra de alto desempeño en área de alberca residencial, proporcionando protección solar eficiente y reducción de temperatura.',
+        image: 'https://res.cloudinary.com/dd93jrilg/image/upload/w_1200,c_limit,f_auto,q_auto:good/v1770908142/3g-velarias/residential/1770908142003-proyecto-50-2.jpg',
         coordinates: [20.6736, -101.3468],
         area: '45 m²',
         duration: '3 semanas'
     },
     {
         category: 'cochera',
-        title: 'Cochera Doble Minimalista',
-        location: 'León, Gto.',
-        description: 'Estructura tensada para protección de dos vehículos. Integración arquitectónica con fachada moderna.',
-        image: 'https://res.cloudinary.com/dd93jrilg/image/upload/v1769624000/Cochera1.jpg',
+        title: 'Marco rígido para vivienda',
+        location: 'Irapuato, Gto',
+        description: 'Marco rígido en estructura metálica con cubierta de malla sombra, desarrollado para brindar protección solar y confort térmico.',
+        image: 'https://res.cloudinary.com/dd93jrilg/image/upload/w_1200,c_limit,f_auto,q_auto:good/v1770911503/3g-velarias/residential/1770911502784-proyecto-51-1.jpg',
         coordinates: [21.1221, -101.6826],
         area: '32 m²',
         duration: '2 semanas'
     },
     {
         category: 'jardin',
-        title: 'Cubierta Jardín Zen',
-        location: 'San Miguel de Allende, Gto.',
-        description: 'Velaria triangular para área de descanso en jardín. Protección UV y diseño escultural.',
-        image: 'https://res.cloudinary.com/dd93jrilg/image/upload/v1769624000/Jardin1.jpg',
+        title: 'Pergolado Residencial para Jardín',
+        location: 'Irapuato, Gto',
+        description: 'Pergolado residencial en área de jardín, creando un espacio de estar funcional y confortable con protección solar parcial.',
+        image: 'https://res.cloudinary.com/dd93jrilg/image/upload/w_1200,c_limit,f_auto,q_auto:good/v1770915325/3g-velarias/residential/1770915324098-proyecto-58-2.jpg',
         coordinates: [20.9144, -100.7452],
         area: '28 m²',
         duration: '2 semanas'
     },
     {
-        category: 'terraza',
-        title: 'Roof Garden Panorámico',
-        location: 'Guanajuato Capital, Gto.',
-        description: 'Cubierta para terraza en azotea con vista a la ciudad. Resistencia a vientos fuertes.',
-        image: 'https://res.cloudinary.com/dd93jrilg/image/upload/v1769624000/Terraza2.jpg',
+        category: 'pergola',
+        title: 'Pergolado Doble Residencial',
+        location: 'Irapuato, Gto',
+        description: 'Pergolado doble para residencia particular, con sistema metálico y cubierta textil arquitectónica para protección solar.',
+        image: 'https://res.cloudinary.com/dd93jrilg/image/upload/w_1200,c_limit,f_auto,q_auto:good/v1770907209/3g-velarias/residential/1770907208949-proyecto-46-3.jpg',
         coordinates: [21.0190, -101.2574],
         area: '60 m²',
         duration: '4 semanas'
     },
     {
         category: 'cochera',
-        title: 'Cochera Residencial El Bosque',
-        location: 'León, Gto.',
-        description: 'Protección para 3 autos con estructura de acero y membrana importada.',
-        image: 'https://res.cloudinary.com/dd93jrilg/image/upload/v1769624000/Cochera2.jpg',
+        title: 'Protección para tu auto',
+        location: 'Irapuato, Gto',
+        description: 'Tensoestructura con malla sombra para protección de vehículos contra la radiación solar directa. Sombra uniforme y ventilación.',
+        image: 'https://res.cloudinary.com/dd93jrilg/image/upload/w_1200,c_limit,f_auto,q_auto:good/v1770848147/3g-velarias/residential/1770848146636-proyecto-20-3.jpg',
         coordinates: [21.1521, -101.7026],
         area: '55 m²',
         duration: '3 semanas'
-    },
-    {
-        category: 'jardin',
-        title: 'Velaria para Piscina',
-        location: 'Irapuato, Gto.',
-        description: 'Sombra parcial para área de alberca. Material resistente a humedad y cloro.',
-        image: 'https://res.cloudinary.com/dd93jrilg/image/upload/v1769624000/Jardin2.jpg',
-        coordinates: [20.6836, -101.3568],
-        area: '40 m²',
-        duration: '3 semanas'
     }
 ];
+
 
 // Fallback coordinates for Bajío region (León, Irapuato, Guanajuato, SMA, Qro)
 const FALLBACK_COORDINATES = [
@@ -178,7 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initDynamicProjects();
     initMap();
     initServiceVideos();
-    initHeroParticles();
+    initHeroCarousel();
 });
 
 /**
@@ -1008,98 +1009,213 @@ function initMap() {
 }
 
 /**
- * Hero Particle Effect
- * Tracks mouse movement and creates a particle trail
+ * Hero 3D Carousel - Shows 3 cards at once with depth perspective
+ * Center card is larger, side cards are smaller with rotateY
+ * Auto-slides every 4 seconds, pauses on hover
  */
-function initHeroParticles() {
-    const canvas = document.getElementById('hero-particles');
-    if (!canvas) return;
+function initHeroCarousel() {
+    const track = document.getElementById('heroCarouselTrack');
+    const dotsContainer = document.getElementById('heroCarouselDots');
+    const carousel = document.getElementById('heroCarousel');
 
-    const ctx = canvas.getContext('2d');
-    let particles = [];
-    let width, height;
+    if (!track || !dotsContainer || !carousel) return;
+    if (!residentialProjects || residentialProjects.length === 0) return;
 
-    // Set canvas size
-    function resize() {
-        width = canvas.width = canvas.parentElement.offsetWidth;
-        height = canvas.height = canvas.parentElement.offsetHeight;
-    }
+    // Take first 5 projects for the hero carousel
+    const heroProjects = residentialProjects.slice(0, 5);
+    let currentSlide = 0;
+    let autoPlayInterval = null;
+    const cards = [];
 
-    // Initial resize
-    resize();
-    window.addEventListener('resize', resize);
+    // Capitalize helper
+    const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
-    // Mouse tracking
-    const mouse = { x: null, y: null };
+    // Create carousel cards
+    heroProjects.forEach((project, index) => {
+        const imageUrl = getImageUrl(project.image);
 
-    // Only enable on non-touch devices for performance/battery
-    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        const card = document.createElement('div');
+        card.className = 'hero-carousel-card';
+        card.innerHTML = `
+            <img src="${imageUrl}" alt="${project.title}" loading="${index === 0 ? 'eager' : 'lazy'}">
+            <div class="hero-carousel-card-overlay"></div>
+            <div class="hero-carousel-card-content">
+                <span class="hero-carousel-card-badge">${capitalize(project.category)}</span>
+                <h3 class="hero-carousel-card-title">${project.title}</h3>
+                <p class="hero-carousel-card-location">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    ${project.location}
+                </p>
+            </div>
+        `;
 
-    if (!isTouch) {
-        document.querySelector('.hero').addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            mouse.x = e.clientX - rect.left;
-            mouse.y = e.clientY - rect.top;
-
-            // Spawn particles on move
-            for (let i = 0; i < 2; i++) {
-                particles.push(new Particle(mouse.x, mouse.y));
+        // Click on active card opens modal, click on side cards navigates
+        card.addEventListener('click', () => {
+            if (card.classList.contains('is-active')) {
+                if (typeof window.openProjectModal === 'function') {
+                    window.openProjectModal(project, heroProjects, index);
+                }
+            } else if (card.classList.contains('is-prev')) {
+                goToSlide((currentSlide - 1 + heroProjects.length) % heroProjects.length);
+            } else if (card.classList.contains('is-next')) {
+                goToSlide((currentSlide + 1) % heroProjects.length);
             }
         });
 
-        document.querySelector('.hero').addEventListener('mouseleave', () => {
-            mouse.x = null;
-            mouse.y = null;
+        track.appendChild(card);
+        cards.push(card);
+    });
+
+    // Create dots
+    heroProjects.forEach((_, index) => {
+        const dot = document.createElement('button');
+        dot.className = 'hero-carousel-dot' + (index === 0 ? ' active' : '');
+        dot.setAttribute('aria-label', `Ir a proyecto ${index + 1}`);
+        dot.addEventListener('click', () => goToSlide(index));
+        dotsContainer.appendChild(dot);
+    });
+
+    // Position cards based on current slide
+    function updateCardPositions() {
+        const total = heroProjects.length;
+
+        cards.forEach((card, i) => {
+            // Remove all position classes
+            card.classList.remove('is-active', 'is-prev', 'is-next', 'is-far-prev', 'is-far-next');
+
+            // Calculate relative position
+            let diff = i - currentSlide;
+            // Wrap around
+            if (diff > total / 2) diff -= total;
+            if (diff < -total / 2) diff += total;
+
+            if (diff === 0) {
+                card.classList.add('is-active');
+            } else if (diff === -1) {
+                card.classList.add('is-prev');
+            } else if (diff === 1) {
+                card.classList.add('is-next');
+            } else if (diff <= -2) {
+                card.classList.add('is-far-prev');
+            } else {
+                card.classList.add('is-far-next');
+            }
+        });
+
+        // Update dots
+        const dots = dotsContainer.querySelectorAll('.hero-carousel-dot');
+        dots.forEach((dot, i) => {
+            dot.classList.toggle('active', i === currentSlide);
         });
     }
 
-    class Particle {
-        constructor(x, y) {
-            this.x = x;
-            this.y = y;
-            // Random direction
-            this.vx = (Math.random() - 0.5) * 1.5;
-            this.vy = (Math.random() - 0.5) * 1.5;
-            this.size = Math.random() * 3 + 1; // 1-4px
-            // Life for fading
-            this.life = 1;
-            this.decay = Math.random() * 0.02 + 0.01;
-            this.color = '#C41E3A'; // Brand Red
-        }
+    // Go to specific slide
+    function goToSlide(index) {
+        currentSlide = index;
+        updateCardPositions();
+    }
 
-        update() {
-            this.x += this.vx;
-            this.y += this.vy;
-            this.life -= this.decay;
-        }
+    // Next slide
+    function nextSlide() {
+        const next = (currentSlide + 1) % heroProjects.length;
+        goToSlide(next);
+    }
 
-        draw() {
-            ctx.fillStyle = `rgba(196, 30, 58, ${this.life})`;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fill();
+    // Auto-play
+    function startAutoPlay() {
+        stopAutoPlay();
+        autoPlayInterval = setInterval(nextSlide, 4000);
+    }
+
+    function stopAutoPlay() {
+        if (autoPlayInterval) {
+            clearInterval(autoPlayInterval);
+            autoPlayInterval = null;
         }
     }
 
-    function animate() {
-        ctx.clearRect(0, 0, width, height);
+    // Pause on hover
+    carousel.addEventListener('mouseenter', stopAutoPlay);
+    carousel.addEventListener('mouseleave', startAutoPlay);
 
-        // Update and draw
-        for (let i = 0; i < particles.length; i++) {
-            particles[i].update();
-            particles[i].draw();
+    // Touch & Mouse drag support
+    let dragStartX = 0;
+    let isDragging = false;
 
-            // Remove dead particles
-            if (particles[i].life <= 0) {
-                particles.splice(i, 1);
-                i--;
+    function onDragStart(x) {
+        dragStartX = x;
+        isDragging = true;
+        stopAutoPlay();
+        // Disable transition during drag for responsiveness
+        cards.forEach(c => c.style.transition = 'none');
+    }
+
+    function onDragMove(x) {
+        if (!isDragging) return;
+        const delta = x - dragStartX;
+        const offsetPx = Math.max(-80, Math.min(80, delta * 0.4));
+        // Apply small visual offset to active card during drag
+        cards.forEach(c => {
+            if (c.classList.contains('is-active')) {
+                c.style.transform = `scale(1) translateX(${offsetPx}px) translateZ(0)`;
             }
-        }
-
-        requestAnimationFrame(animate);
+        });
     }
 
-    animate();
+    function onDragEnd(x) {
+        if (!isDragging) return;
+        isDragging = false;
+        // Restore transitions
+        cards.forEach(c => c.style.transition = '');
+        cards.forEach(c => c.style.transform = '');
+
+        const diff = dragStartX - x;
+        if (Math.abs(diff) > 30) {
+            if (diff > 0) {
+                goToSlide((currentSlide + 1) % heroProjects.length);
+            } else {
+                goToSlide((currentSlide - 1 + heroProjects.length) % heroProjects.length);
+            }
+        } else {
+            updateCardPositions();
+        }
+
+        startAutoPlay();
+    }
+
+    // Touch events
+    carousel.addEventListener('touchstart', (e) => {
+        onDragStart(e.touches[0].clientX);
+    }, { passive: true });
+
+    carousel.addEventListener('touchmove', (e) => {
+        onDragMove(e.touches[0].clientX);
+    }, { passive: true });
+
+    carousel.addEventListener('touchend', (e) => {
+        onDragEnd(e.changedTouches[0].clientX);
+    }, { passive: true });
+
+    // Mouse drag events (desktop)
+    carousel.addEventListener('mousedown', (e) => {
+        onDragStart(e.clientX);
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        onDragMove(e.clientX);
+    });
+
+    document.addEventListener('mouseup', (e) => {
+        onDragEnd(e.clientX);
+    });
+
+    // Initialize positions and start
+    updateCardPositions();
+    startAutoPlay();
 }
 
 /**

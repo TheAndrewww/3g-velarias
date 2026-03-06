@@ -184,42 +184,59 @@
 
     <!-- Hero Section -->
     <section class="hero" id="inicio" data-section="residencial-inicio">
-        <div class="hero-bg"></div>
-        <canvas id="hero-particles"></canvas>
+        <!-- Video Background -->
+        <video class="hero-video-bg" autoplay muted loop playsinline preload="metadata">
+            <source src="https://res.cloudinary.com/dd93jrilg/video/upload/v1769645956/Terraza-2_qhyjnd.mov"
+                type="video/mp4">
+        </video>
         <div class="hero-overlay"></div>
+
         <div class="hero-content">
-            <h1 class="hero-title">
-                Plusvalía, Diseño y Solución
-                <span class="highlight">para tu Hogar</span>
-            </h1>
-            <p class="hero-subtitle">
-                Diseñamos e instalamos velarias, pergolados y toldos
-                que protegen y embellecen tus espacios favoritos.
-            </p>
-            <div class="hero-cta">
-                <a href="#contacto" class="btn btn-primary">
-                    <span>Solicitar Cotización</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                </a>
-                <a href="#proyectos" class="btn btn-secondary">Ver Proyectos</a>
+            <!-- Left Column: Text -->
+            <div class="hero-left">
+                <h1 class="hero-title">
+                    Plusvalía, Diseño y Solución
+                    <span class="highlight">para tu Hogar</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Diseñamos e instalamos velarias, pergolados y toldos
+                    que protegen y embellecen tus espacios favoritos.
+                </p>
+                <div class="hero-cta">
+                    <a href="#contacto" class="btn btn-primary">
+                        <span>Solicitar Cotización</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                    </a>
+                    <a href="#proyectos" class="btn btn-secondary">Ver Proyectos</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <span class="hero-stat-number">500+</span>
+                        <span class="hero-stat-label">Proyectos</span>
+                    </div>
+                    <div class="hero-stat">
+                        <span class="hero-stat-number">20+</span>
+                        <span class="hero-stat-label">Años</span>
+                    </div>
+                    <div class="hero-stat">
+                        <span class="hero-stat-number">50k+</span>
+                        <span class="hero-stat-label">m² Instalados</span>
+                    </div>
+                </div>
             </div>
-            <div class="hero-stats">
-                <div class="hero-stat">
-                    <span class="hero-stat-number">500+</span>
-                    <span class="hero-stat-label">Proyectos</span>
+
+            <!-- Right Column: Project Carousel -->
+            <div class="hero-carousel" id="heroCarousel">
+                <div class="hero-carousel-track" id="heroCarouselTrack">
+                    <!-- Cards will be populated dynamically by JS -->
                 </div>
-                <div class="hero-stat">
-                    <span class="hero-stat-number">20+</span>
-                    <span class="hero-stat-label">Años</span>
-                </div>
-                <div class="hero-stat">
-                    <span class="hero-stat-number">50k+</span>
-                    <span class="hero-stat-label">m² Instalados</span>
-                </div>
+                <div class="hero-carousel-dots" id="heroCarouselDots"></div>
             </div>
         </div>
+
         <div class="hero-scroll">
             <span>Descubre más</span>
             <div class="scroll-indicator"></div>
