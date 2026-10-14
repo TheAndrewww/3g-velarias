@@ -9,6 +9,14 @@
     {
       "source": "/api/projects/",
       "destination": "https://3g-velarias-production.up.railway.app/api/projects"
+    },
+    {
+      "source": "/api/contacto",
+      "destination": "https://3g-velarias-production.up.railway.app/api/contacto"
+    },
+    {
+      "source": "/api/contacto/",
+      "destination": "https://3g-velarias-production.up.railway.app/api/contacto"
     }
   ],
   "headers": [

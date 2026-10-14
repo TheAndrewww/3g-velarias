@@ -72,9 +72,15 @@ app.use(compression()); // Gzip all responses
 app.use(express.json());
 app.use(cookieParser());
 
+// Contactos de la web al reparto (WEB-05): POST /api/contacto recibe una copia del formulario de la página y la manda
+// a Ventas. Bandera CONTACTO_A_VENTAS: apagada (por omisión) no sale nada a Ventas; el correo de FormSubmit no cambia.
+const contacto = require('./routes/contacto')();
+app.use(contacto);
+app.use('/api/contacto', contacto.alFallarCuerpo);
+
 // Puertas entre sistemas (WEB-02): /api/inicio3g/v1 y /api/sistemas/v1, con llave por origen (plan final §7.1).
 // Rutas nuevas y cerradas por omisión: sin LLAVE_ENTRANTE_<ORIGEN>_SHA256 responden 503 «puerta sin configurar».
-app.use(require('./routes/sistemas')({ prisma, version: require('../package.json').version }));
+app.use(require('./routes/sistemas')({ prisma, version: require('../package.json').version, complementos: [contacto.salud] }));
 
 // Configure Multer for Image Uploads (memory storage — files go to Cloudinary, not disk)
 const upload = multer({

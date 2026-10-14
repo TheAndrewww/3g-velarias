@@ -35,9 +35,16 @@ const OBLIGATORIAS = [
     'CLOUDINARY_API_SECRET',
 ];
 
-// Banderas del sitio: { nombre, encendida(env) }. Hoy no hay ninguna; WEB-03 (CUENTAS3G_MODO) y WEB-05
-// (CONTACTO_A_VENTAS) se suman aquí para que /salud diga su nombre y si están encendidas, nunca su valor.
-const BANDERAS = [];
+/** ¿Está encendida? «1», «true», «si»/«sí» u «on» (sin importar mayúsculas); cualquier otra cosa o nada = apagada. */
+function banderaEncendida(valor) {
+    return /^(1|true|s[ií]|on)$/i.test(String(valor === undefined || valor === null ? '' : valor).trim());
+}
+
+// Banderas del sitio: { nombre, encendida(env) }. /salud dice su nombre y si están encendidas, nunca su valor.
+// WEB-03 (CUENTAS3G_MODO) se suma aquí cuando llegue.
+const BANDERAS = [
+    { nombre: 'CONTACTO_A_VENTAS', encendida: (env) => banderaEncendida(env.CONTACTO_A_VENTAS) }, // WEB-05, contactos de la web a Ventas
+];
 
 /** Fecha ISO con la zona de México (p. ej. 2026-10-15T10:00:00-06:00). */
 function isoMexico(fecha = new Date()) {
@@ -88,8 +95,10 @@ function faltantes(env) {
  * @param {string} [opciones.version]  versión del servidor del sitio
  * @param {Function} [opciones.reloj]  () => Date (para pruebas)
  * @param {Function} [opciones.anotar] (fila) => void, registro sin datos personales
+ * @param {Array}  [opciones.complementos] piezas de otras partes del servidor para /salud:
+ *                 [{ pieza: () => objeto|null, faltan: (env) => [nombres] }] (p. ej. los contactos de WEB-05)
  */
-function crearPuertas({ prisma, env = process.env, version = '0.0.0', reloj = () => new Date(), anotar } = {}) {
+function crearPuertas({ prisma, env = process.env, version = '0.0.0', reloj = () => new Date(), anotar, complementos = [] } = {}) {
     const router = express.Router();
     const registro = leerRegistro(env);
     const ultimoUso = new Map();
@@ -175,7 +184,7 @@ function crearPuertas({ prisma, env = process.env, version = '0.0.0', reloj = ()
             clearTimeout(tiempo);
         }
 
-        const faltan = faltantes(env);
+        const faltan = [...faltantes(env), ...complementos.flatMap((c) => (c.faltan ? c.faltan(env) : []))];
         const sinFotos = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'].some((n) => faltan.includes(n));
         piezas.push(sinFotos
             ? { id: 'fotos', nombre: 'Subida de fotos (Cloudinary)', estado: 'aviso', mensaje: 'Falta configuración: no se pueden subir fotos nuevas' }
@@ -184,6 +193,10 @@ function crearPuertas({ prisma, env = process.env, version = '0.0.0', reloj = ()
         piezas.push(sinEntrada
             ? { id: 'entrada', nombre: 'Entrada al administrador', estado: 'aviso', mensaje: 'Configuración incompleta de la entrada' }
             : { id: 'entrada', nombre: 'Entrada al administrador', estado: 'ok', mensaje: 'Configurada' });
+        for (const c of complementos) {
+            const pieza = c.pieza ? c.pieza() : null;
+            if (pieza) piezas.push(pieza);
+        }
 
         const peor = piezas.some((p) => p.estado === 'mal') ? 'mal' : (piezas.some((p) => p.estado === 'aviso') || faltan.length ? 'aviso' : 'ok');
         const primera = piezas.find((p) => p.estado === peor);
@@ -243,3 +256,4 @@ module.exports = crearPuertas;
 module.exports.isoMexico = isoMexico;
 module.exports.OBLIGATORIAS = OBLIGATORIAS;
 module.exports.BANDERAS = BANDERAS;
+module.exports.banderaEncendida = banderaEncendida;
