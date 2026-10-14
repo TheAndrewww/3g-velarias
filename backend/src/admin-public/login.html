@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Diseño 3G: interruptor (va antes de cualquier CSS para que no parpadee). Apagado = la pantalla de siempre. -->
+    <style>:root:not([data-diseno='3g']) .g3-si{display:none!important}</style><script>(function(d,k){try{var x=d.hasAttribute('data-g3-excluir'),r=window.G3_RUTAS_SIN_DISENO||[],p=location.pathname,i,s;for(i=0;i<r.length&&!x;i++){s=r[i];x=s instanceof RegExp?s.test(p):(s=String(s),s.slice(-1)==='/'&&(s=s.slice(0,-1)),p===s||p.indexOf(s+'/')===0)}if(x){d.removeAttribute('data-diseno');return}var q=new URLSearchParams(location.search).get('diseno');if(q==='3g'||q==='actual')localStorage.setItem(k,q);else q=localStorage.getItem(k);if(q==='3g'){d.setAttribute('data-diseno','3g');var t=localStorage.getItem(k+'-tema');if(/^(auto|claro|oscuro)$/.test(t))d.setAttribute('data-g3-tema',t)}else if(q==='actual')d.removeAttribute('data-diseno')}catch(e){}})(document.documentElement,'diseno-3g')</script>
+    <script>(function(d){if(d.getAttribute('data-diseno')==='3g'&&!d.hasAttribute('data-g3-tema'))d.setAttribute('data-g3-tema','auto')})(document.documentElement)</script>
     <title>Login - Panel de Administración | 3G Velarias</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -79,17 +82,20 @@
             75% { transform: translateX(10px); }
         }
     </style>
+    <!-- Diseño 3G v1.1.0 (paquete vendorizado en /admin/diseno-3g) + ajustes del administrador. Todo bajo html[data-diseno="3g"]. -->
+    <link rel="stylesheet" href="/admin/diseno-3g/diseno-3g.css">
+    <link rel="stylesheet" href="/admin/diseno-3g/admin-3g.css">
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex items-center justify-center p-4 g3a-login">
 
     <div class="login-card max-w-md w-full rounded-2xl shadow-2xl p-8 md:p-10">
         <!-- Logo -->
         <div class="text-center mb-8 logo-animation">
             <div class="flex items-center justify-center mx-auto mb-4">
-                <img src="/admin/assets/residencial/logo.svg" alt="3G Velarias" class="h-20 w-auto">
+                <img src="/admin/assets/residencial/logo.svg" alt="3G Velarias" class="h-20 w-auto g3a-login-logo">
             </div>
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Pagina web 3G</h1>
-            <p class="text-gray-500 text-sm">Panel de Administración</p>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2"><span class="g3-no">Pagina web 3G</span><span class="g3-si">Administrador del sitio</span></h1>
+            <p class="text-gray-500 text-sm g3a-login-sub"><span class="g3-no">Panel de Administración</span><span class="g3-si">Portafolio de www.3gvelarias.com</span></p>
         </div>
 
         <!-- Login Form -->
@@ -182,7 +188,7 @@
                 id="submitBtn"
                 class="btn-primary w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-md text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
             >
-                <span id="btn-text">Iniciar Sesión</span>
+                <span id="btn-text"><span class="g3-no">Iniciar Sesión</span><span class="g3-si">Entrar</span></span>
                 <svg id="btn-loading" class="hidden animate-spin ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -192,10 +198,13 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center">
-            <p class="text-xs text-gray-500">
+            <p class="text-xs text-gray-500 g3a-login-pie">
                 Arquitectura Textil Profesional
             </p>
         </div>
+
+        <!-- Diseño 3G: interruptor para volver al diseño de siempre (solo con el interruptor encendido) -->
+        <div class="g3-si g3a-login-interruptor" id="g3-interruptor-login"></div>
     </div>
 
     <script>
@@ -279,6 +288,25 @@
 
         // Auto-focus username input
         document.getElementById('username').focus();
+    </script>
+    <!-- Diseño 3G: paquete y detalles de esta pantalla. Apagado no hace nada. -->
+    <script src="/admin/diseno-3g/diseno-3g.js"></script>
+    <script>
+        (function () {
+            if (!(window.G3 && G3.activo())) return;
+            G3.interruptor('#g3-interruptor-login', { bloque: true });
+            var ojo = document.getElementById('togglePassword');
+            var clave = document.getElementById('password');
+            var etiquetar = function () {
+                var visible = clave.type === 'text';
+                ojo.setAttribute('aria-label', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+                ojo.setAttribute('aria-pressed', String(visible));
+                ojo.title = visible ? 'Ocultar contraseña' : 'Mostrar contraseña';
+            };
+            etiquetar();
+            ojo.addEventListener('click', etiquetar);
+            document.getElementById('error-message').setAttribute('role', 'alert');
+        })();
     </script>
 </body>
 </html>

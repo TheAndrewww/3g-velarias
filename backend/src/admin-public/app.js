@@ -1,3 +1,9 @@
+// Diseño 3G: true solo con el interruptor encendido (html[data-diseno="3g"], lo pone /admin/diseno-3g/diseno-3g.js).
+// Apagado, el panel funciona y se ve exactamente como siempre; encendido, la parte visual la dibuja G3A (diseno-3g/admin-3g.js).
+const G3_ON = !!(window.G3 && typeof window.G3.activo === 'function' && window.G3.activo() && window.G3A);
+// Si el interruptor quedó encendido pero no cargó el paquete, se regresa al diseño de siempre (nunca una mezcla).
+if (!G3_ON && document.documentElement.getAttribute('data-diseno') === '3g') document.documentElement.removeAttribute('data-diseno');
+
 let currentTab = 'residential'; // 'residential' or 'industrial'
 let editProjectId = null; // Track the DB ID if we are editing
 let projects = { residentialProjects: [], industrialProjects: [] };
@@ -19,7 +25,7 @@ const grid = document.getElementById('projects-grid');
 const imageInput = document.getElementById('imageInput');
 const gallery = document.getElementById('image-gallery');
 const industrialFields = document.getElementById('industrial-fields');
-const searchInput = document.getElementById('search-input');
+const searchInput = document.getElementById(G3_ON ? 'g3-buscar' : 'search-input');
 const categoryFilterSelect = document.getElementById('category-filter');
 const emptyState = document.getElementById('empty-state');
 const projectCount = document.getElementById('project-count');
@@ -32,6 +38,8 @@ const CATEGORIES = {
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
+    // Diseño 3G: si la vista nueva fallara al armarse, el arranque de siempre sigue (lista, fotos, filtros, mapa, salir).
+    if (G3_ON) { try { G3A.iniciar(); } catch (err) { console.error('Diseño 3G: no se pudo armar la vista nueva', err); } }
     await loadConfig();
     fetchProjects();
     setupImageHandlers();
@@ -56,6 +64,7 @@ async function loadConfig() {
     if (viewWebsiteBtn) {
         viewWebsiteBtn.href = window.FRONTEND_URL + '/residencial/';
     }
+    if (G3_ON) G3A.actualizarSitio();
 }
 
 // Hacer switchTab global para onclick en HTML
@@ -67,7 +76,7 @@ window.switchTab = function (tab) {
     const viewWebsiteBtn = document.getElementById('view-website-btn');
 
     if (tab === 'industrial') {
-        document.body.classList.add('dark-theme');
+        if (!G3_ON) document.body.classList.add('dark-theme'); // con Diseño 3G el tema lo decide el interruptor de tema
         logo.src = '/admin/assets/Logo-sin-salmo.svg';
         viewWebsiteBtn.href = window.FRONTEND_URL + '/industrial/';
     } else {
@@ -94,6 +103,7 @@ window.switchTab = function (tab) {
     categoryFilter = '';
     categoryFilterSelect.value = '';
 
+    if (G3_ON) G3A.alCambiarPestana();
     renderProjects();
 }
 
@@ -102,6 +112,11 @@ window.switchTab = function (tab) {
 // Helper to handle authentication errors
 function handleAuthError(error) {
     if (error.requiresLogin) {
+        if (G3_ON) {
+            G3A.aviso('Tu sesión terminó. Te llevamos a la pantalla de entrada…', 'aviso');
+            setTimeout(() => { window.location.href = '/admin/login'; }, 1800);
+            return;
+        }
         alert('Tu sesión ha expirado. Redirigiendo al login...');
         window.location.href = '/admin/login';
     }
@@ -124,6 +139,7 @@ async function fetchProjects() {
         renderProjects();
     } catch (err) {
         console.error('Error fetching projects:', err);
+        if (G3_ON) { G3A.errorCarga(); return; }
         alert('Error conectando con el servidor. Asegúrate de ejecutar "npm start".');
     }
 }
@@ -177,6 +193,7 @@ window.hideUploadProgress = function () {
 }
 
 function updateUploadProgress(current, total, fileName, status) {
+    if (G3_ON) return G3A.progresoSubida(current, total, fileName, status);
     const percent = Math.round((current / total) * 100);
     document.getElementById('upload-progress-bar').style.width = `${percent}%`;
     document.getElementById('upload-progress-text').textContent = `${current} / ${total}`;
@@ -189,6 +206,7 @@ function updateUploadProgress(current, total, fileName, status) {
 }
 
 function addUploadItem(fileName, status) {
+    if (G3_ON) return G3A.agregarSubida(fileName, status);
     const list = document.getElementById('upload-progress-list');
     const item = document.createElement('div');
     item.id = `upload-item-${fileName}`;
@@ -202,6 +220,7 @@ function addUploadItem(fileName, status) {
 }
 
 function updateUploadItem(fileName, status, message = '') {
+    if (G3_ON) return G3A.actualizarSubida(fileName, status, message);
     const item = document.getElementById(`upload-item-${fileName}`);
     if (item) {
         item.innerHTML = `
@@ -303,7 +322,8 @@ async function saveProject(e) {
         }
 
         // Show final summary
-        updateUploadProgress(
+        if (G3_ON) G3A.resumenSubida(successCount, errorCount, compressedCount, filesToUpload.length);
+        else updateUploadProgress(
             filesToUpload.length,
             filesToUpload.length,
             `✅ ${successCount} exitosas${compressedCount > 0 ? ` (🗜️ ${compressedCount} comprimidas)` : ''}, ❌ ${errorCount} errores`,
@@ -324,6 +344,7 @@ async function saveProject(e) {
     const finalImages = [...existingPaths, ...uploadedPaths];
 
     if (finalImages.length === 0) {
+        if (G3_ON) { G3A.aviso('Agrega al menos una foto antes de guardar la obra.', 'mal'); return; }
         alert('Por favor agrega al menos una imagen');
         return;
     }
@@ -371,18 +392,23 @@ async function saveProject(e) {
         if (saveData.success) {
             closeModal();
             fetchProjects();
-            alert(editProjectId !== null ? '¡Proyecto actualizado!' : '¡Proyecto guardado!');
+            if (G3_ON) G3A.aviso(editProjectId !== null ? `Cambios guardados en «${newProject.title}».` : `Obra guardada: «${newProject.title}». Ya sale en el sitio.`, 'ok');
+            else alert(editProjectId !== null ? '¡Proyecto actualizado!' : '¡Proyecto guardado!');
         }
     } catch (err) {
         console.error('Error:', err);
-        alert('Hubo un error al guardar: ' + err.message);
+        if (G3_ON) G3A.aviso('No se pudo guardar la obra: ' + err.message, 'mal');
+        else alert('Hubo un error al guardar: ' + err.message);
     }
 }
 
 form.addEventListener('submit', saveProject);
 
 window.deleteProject = async function (projectId) {
-    if (!confirm('¿Estás seguro de eliminar este proyecto?')) return;
+    const g3Obra = G3_ON ? G3A.buscarObra(projectId) : null;
+    if (G3_ON) {
+        if (!(await G3A.confirmarBorrado(projectId))) return;
+    } else if (!confirm('¿Estás seguro de eliminar este proyecto?')) return;
 
     try {
         const res = await fetch(`/api/projects/${projectId}?type=${currentTab}`, {
@@ -393,10 +419,12 @@ window.deleteProject = async function (projectId) {
             const error = await res.json();
             throw new Error(error.error || `HTTP ${res.status}`);
         }
+        if (G3_ON) G3A.alBorrar(projectId, g3Obra && g3Obra.title);
         fetchProjects();
-        alert('¡Proyecto eliminado!');
+        if (!G3_ON) alert('¡Proyecto eliminado!');
     } catch (err) {
-        alert('Error al eliminar: ' + err.message);
+        if (G3_ON) G3A.aviso('No se pudo eliminar la obra: ' + err.message, 'mal');
+        else alert('Error al eliminar: ' + err.message);
     }
 }
 
@@ -423,18 +451,24 @@ window.toggleGlobeVisibility = async function (projectId, toggleEl) {
             throw new Error(`HTTP ${res.status}`);
         }
         // Successfully updated on server
+        if (G3_ON) G3A.aviso(newState ? `«${project.title}» ya sale en el globo 3D.` : `«${project.title}» ya no sale en el globo 3D.`, 'ok');
     } catch (err) {
         console.error('Error toggling visibility:', err);
         // Revert on failure
         project.showInGlobe = originalState;
         toggleEl.checked = originalState;
-        alert('Error al cambiar la visibilidad. Intente de nuevo.');
+        if (G3_ON) G3A.aviso('No se pudo cambiar si sale en el globo. Intenta de nuevo.', 'mal');
+        else alert('Error al cambiar la visibilidad. Intente de nuevo.');
     }
 }
 
 // --- Rendering ---
 
 function renderProjects() {
+    if (G3_ON) {
+        const g3Lista = currentTab === 'residential' ? projects.residentialProjects : projects.industrialProjects;
+        return G3A.pintarObras(g3Lista, filterProjects(g3Lista));
+    }
     grid.innerHTML = '';
     const list = currentTab === 'residential' ? projects.residentialProjects : projects.industrialProjects;
     const filteredList = filterProjects(list);
@@ -600,6 +634,7 @@ window.openModal = function (isEdit = false) {
         industrialFields.classList.add('hidden');
     }
 
+    if (G3_ON) G3A.alAbrir(isEdit);
     modal.classList.remove('hidden');
     // Small delay for transition
     setTimeout(() => {
@@ -610,6 +645,7 @@ window.openModal = function (isEdit = false) {
 
 // Hacer closeModal global para onclick en HTML
 window.closeModal = function () {
+    if (G3_ON) G3A.alCerrar();
     modal.classList.add('opacity-0');
     modalContent.classList.add('scale-95');
     setTimeout(() => {
@@ -639,6 +675,7 @@ function setupImageHandlers() {
 }
 
 function renderGallery() {
+    if (G3_ON) return G3A.pintarGaleria();
     gallery.innerHTML = '';
 
     currentImages.forEach((item, index) => {
@@ -725,6 +762,7 @@ function updateCategoryFilter() {
 }
 
 window.clearFilters = function () {
+    if (G3_ON) G3A.limpiar();
     searchTerm = '';
     categoryFilter = '';
     searchInput.value = '';
@@ -743,7 +781,10 @@ function filterProjects(projectsList) {
         // Category filter
         const matchesCategory = !categoryFilter || project.category === categoryFilter;
 
-        return matchesSearch && matchesCategory;
+        // Diseño 3G: filtro extra "Solo incompletas" (apagado siempre pasa)
+        const matchesG3 = !G3_ON || G3A.pasaFiltroExtra(project);
+
+        return matchesSearch && matchesCategory && matchesG3;
     });
 }
 
@@ -815,22 +856,36 @@ function setupLogout() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
             if (!confirm('¿Estás seguro de que quieres cerrar sesión?')) return;
-
-            try {
-                const res = await fetch('/api/logout', {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-
-                if (res.ok) {
-                    window.location.href = '/admin/login';
-                } else {
-                    alert('Error al cerrar sesión');
-                }
-            } catch (err) {
-                console.error('Error during logout:', err);
-                alert('Error al cerrar sesión');
-            }
+            await logout();
         });
+    }
+    // Diseño 3G: el botón "Cerrar sesión" de la barra nueva pregunta con su propia ventana y hace lo mismo.
+    const g3Salir = document.getElementById('g3-salir');
+    if (G3_ON && g3Salir) {
+        g3Salir.addEventListener('click', async () => {
+            if (!(await G3A.confirmarSalida())) return;
+            await logout();
+        });
+    }
+}
+
+async function logout() {
+    try {
+        const res = await fetch('/api/logout', {
+            method: 'POST',
+            credentials: 'include'
+        });
+
+        if (res.ok) {
+            window.location.href = '/admin/login';
+        } else if (G3_ON) {
+            G3A.aviso('No se pudo cerrar la sesión. Intenta de nuevo.', 'mal');
+        } else {
+            alert('Error al cerrar sesión');
+        }
+    } catch (err) {
+        console.error('Error during logout:', err);
+        if (G3_ON) G3A.aviso('No se pudo cerrar la sesión: no hay conexión con el servidor.', 'mal');
+        else alert('Error al cerrar sesión');
     }
 }
