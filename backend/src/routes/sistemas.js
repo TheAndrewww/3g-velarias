@@ -17,6 +17,7 @@
  */
 const crypto = require('crypto');
 const express = require('express');
+const { leerConfig: leerConfigCuentas3G } = require('../cuentas3g/config');
 
 const PREFIJO_INICIO = '/api/inicio3g/v1';
 const PREFIJO_SISTEMAS = '/api/sistemas/v1';
@@ -41,9 +42,10 @@ function banderaEncendida(valor) {
 }
 
 // Banderas del sitio: { nombre, encendida(env) }. /salud dice su nombre y si están encendidas, nunca su valor.
-// WEB-03 (CUENTAS3G_MODO) se suma aquí cuando llegue.
 const BANDERAS = [
     { nombre: 'CONTACTO_A_VENTAS', encendida: (env) => banderaEncendida(env.CONTACTO_A_VENTAS) }, // WEB-05, contactos de la web a Ventas
+    // WEB-03: encendida = la entrada con cuenta 3G de verdad corre (con configuración incompleta se queda apagada).
+    { nombre: 'CUENTAS3G_MODO', encendida: (env) => leerConfigCuentas3G(env).modo !== 'apagado' },
 ];
 
 /** Fecha ISO con la zona de México (p. ej. 2026-10-15T10:00:00-06:00). */

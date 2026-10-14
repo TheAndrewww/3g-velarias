@@ -78,9 +78,15 @@ const contacto = require('./routes/contacto')();
 app.use(contacto);
 app.use('/api/contacto', contacto.alFallarCuerpo);
 
+// Cuenta 3G (WEB-03): bandera CUENTAS3G_MODO. «apagado» (por omisión) = idéntico a hoy: sin botón y sin rutas nuevas.
+// «ambos»: botón «Entrar con tu cuenta 3G» en /admin/login más el acceso de siempre; rutas /admin/entrar/cuentas3g,
+// /admin/entrar/regreso y /api/cuentas3g/aviso. Con configuración incompleta se queda en «apagado» y lo anota.
+const cuentas3g = require('./cuentas3g')({ jwtSecret: SAFE_JWT_SECRET, produccion: NODE_ENV === 'production', raizAdmin: path.join(__dirname, 'admin-public') });
+
 // Puertas entre sistemas (WEB-02): /api/inicio3g/v1 y /api/sistemas/v1, con llave por origen (plan final §7.1).
 // Rutas nuevas y cerradas por omisión: sin LLAVE_ENTRANTE_<ORIGEN>_SHA256 responden 503 «puerta sin configurar».
-app.use(require('./routes/sistemas')({ prisma, version: require('../package.json').version, complementos: [contacto.salud] }));
+app.use(require('./routes/sistemas')({ prisma, version: require('../package.json').version, complementos: [contacto.salud, cuentas3g.salud] }));
+app.use(cuentas3g.router);
 
 // Configure Multer for Image Uploads (memory storage — files go to Cloudinary, not disk)
 const upload = multer({
@@ -138,6 +144,12 @@ function jwtAuth(req, res, next) {
 
     try {
         const decoded = jwt.verify(token, SAFE_JWT_SECRET);
+        // Cuenta 3G (WEB-03): si la cookie trae sub y ver, se revisa contra la lista de versiones. Apagado: nada.
+        const corte = cuentas3g.revisarSesion(decoded);
+        if (corte) {
+            cuentas3g.cerrarSesion(res, corte);
+            return res.status(401).json({ error: corte.texto, requiresLogin: true });
+        }
         req.user = decoded;
         next();
     } catch (error) {
@@ -156,6 +168,11 @@ function requireAuth(req, res, next) {
 
     try {
         const decoded = jwt.verify(token, SAFE_JWT_SECRET);
+        const corte = cuentas3g.revisarSesion(decoded); // WEB-03 (ver jwtAuth)
+        if (corte) {
+            cuentas3g.cerrarSesion(res, corte);
+            return res.redirect('/admin/login?c3g=' + corte.codigo);
+        }
         req.user = decoded;
         next();
     } catch (error) {
