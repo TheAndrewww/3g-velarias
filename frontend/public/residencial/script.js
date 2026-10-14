@@ -4,9 +4,11 @@
  */
 
 // Backend API URL configuration
+// En producción la API va en el mismo dominio: Vercel reenvía solo /api/projects al servidor del sitio
+// (reescritura en frontend/vercel.json). Así la dirección del servidor no vive en el código público.
 const API_BASE_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:3001'
-    : 'https://3g-velarias-production.up.railway.app';
+    : '';
 
 // Helper function to get absolute image URL
 function getImageUrl(imagePath) {

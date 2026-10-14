@@ -72,6 +72,10 @@ app.use(compression()); // Gzip all responses
 app.use(express.json());
 app.use(cookieParser());
 
+// Puertas entre sistemas (WEB-02): /api/inicio3g/v1 y /api/sistemas/v1, con llave por origen (plan final §7.1).
+// Rutas nuevas y cerradas por omisión: sin LLAVE_ENTRANTE_<ORIGEN>_SHA256 responden 503 «puerta sin configurar».
+app.use(require('./routes/sistemas')({ prisma, version: require('../package.json').version }));
+
 // Configure Multer for Image Uploads (memory storage — files go to Cloudinary, not disk)
 const upload = multer({
     storage: multer.memoryStorage(),
