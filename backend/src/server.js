@@ -81,6 +81,7 @@ app.use('/api/contacto', contacto.alFallarCuerpo);
 // Cuenta 3G (WEB-03): bandera CUENTAS3G_MODO. «apagado» (por omisión) = idéntico a hoy: sin botón y sin rutas nuevas.
 // «ambos»: botón «Entrar con tu cuenta 3G» en /admin/login más el acceso de siempre; rutas /admin/entrar/cuentas3g,
 // /admin/entrar/regreso y /api/cuentas3g/aviso. Con configuración incompleta se queda en «apagado» y lo anota.
+// «solo» (WEB-04): solo cuenta 3G; las cookies del acceso de siempre dejan de valer, salvo CUENTAS3G_EMERGENCIA.
 const cuentas3g = require('./cuentas3g')({ jwtSecret: SAFE_JWT_SECRET, produccion: NODE_ENV === 'production', raizAdmin: path.join(__dirname, 'admin-public') });
 
 // Puertas entre sistemas (WEB-02): /api/inicio3g/v1 y /api/sistemas/v1, con llave por origen (plan final §7.1).
@@ -393,12 +394,22 @@ app.delete('/api/projects/:id', jwtAuth, async (req, res) => {
 app.post('/api/login', loginLimiter, (req, res) => {
     const { username, password, remember } = req.body;
 
+    // Cuenta 3G (WEB-04): en «solo» el acceso de siempre no abre, salvo con la llave de emergencia (CUENTAS3G_EMERGENCIA).
+    // Apagado y «ambos»: { abierta: true, emergencia: false } = idéntico a hoy.
+    const siempre = cuentas3g.entradaDeSiempre();
+    if (!siempre.abierta) {
+        cuentas3g.anotar({ evento: 'entrada-de-siempre', resultado: 'cerrada' });
+        return res.status(403).json({ success: false, error: 'El acceso con usuario y contraseña está apagado. Entra con tu cuenta 3G.' });
+    }
+
     if (username === SAFE_ADMIN_USERNAME && password === SAFE_ADMIN_PASSWORD) {
+        // Llave de emergencia: la cookie dice via «emergencia» y dura 24 h (deja de valer al quitar la variable).
+        const largo = remember && !siempre.emergencia;
         // Generate JWT token
         const token = jwt.sign(
-            { username: username },
+            siempre.emergencia ? { username: username, via: 'emergencia' } : { username: username },
             SAFE_JWT_SECRET,
-            { expiresIn: remember ? '30d' : '24h' } // 30 days if remember, 24 hours otherwise
+            { expiresIn: largo ? '30d' : '24h' } // 30 days if remember, 24 hours otherwise
         );
 
         // Set cookie
@@ -406,11 +417,13 @@ app.post('/api/login', loginLimiter, (req, res) => {
             httpOnly: true,
             secure: NODE_ENV === 'production', // Only HTTPS in production
             sameSite: 'strict',
-            maxAge: remember ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000 // 30 days or 24 hours
+            maxAge: largo ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000 // 30 days or 24 hours
         });
+        if (siempre.emergencia) cuentas3g.anotar({ evento: 'entrada-emergencia', resultado: 'ok' });
 
         res.json({ success: true, message: 'Login exitoso' });
     } else {
+        if (siempre.emergencia) cuentas3g.anotar({ evento: 'entrada-emergencia', resultado: 'mal' });
         res.status(401).json({ success: false, error: 'Usuario o contraseña incorrectos' });
     }
 });

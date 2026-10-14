@@ -1,10 +1,13 @@
 /**
- * Cuenta 3G en el Administrador del sitio (WEB-03 · propuesta E1 · plan final §8 y DISEÑO-CUENTAS-3G §2.6,
+ * Cuenta 3G en el Administrador del sitio (WEB-03 y WEB-04 · propuesta E1 · plan final §8 y DISEÑO-CUENTAS-3G §2.6,
  * §2.7, §3). Usa el paquete cuentas3g-cliente (CTA-08) copiado sin cambios en ../cuentas3g-cliente/.
  *
  * Bandera: CUENTAS3G_MODO (por omisión «apagado» = idéntico a hoy: sin botón y estas rutas no existen).
  * En «ambos» (WEB-03): botón «Entrar con tu cuenta 3G» en /admin/login y el acceso de siempre igual.
- * («solo» llega con WEB-04; mientras tanto se comporta como «ambos».)
+ * En «solo» (WEB-04): el acceso de siempre se esconde y /api/login no abre; la cookie `auth_token` que no trae
+ * via «cuentas3g» se rechaza (también las viejas de 30 días). Salvo emergencia: con CUENTAS3G_EMERGENCIA puesta,
+ * el acceso de siempre vuelve a abrir (solo Dirección conoce la contraseña cambiada) con via «emergencia», 24 h,
+ * y cada entrada queda en el registro; al quitar la variable, esas sesiones también dejan de valer.
  *
  *   GET  /admin/entrar/cuentas3g   cookie temporal sellada (10 min) con state, nonce y verificador → Cuentas 3G
  *   GET  /admin/entrar/regreso     canjea el código, valida la ficha y crea la cookie de siempre `auth_token`
@@ -31,7 +34,7 @@ const IDA_S = 10 * 60;
 const NIVEL_DEL_SITIO = 'admin';
 
 // Textos para la pantalla de entrada (la página los toma por código; la dirección nunca lleva otra cosa).
-const CODIGOS = new Set(['cancelada', 'vencida', 'sin-acceso', 'no-responde', 'invalida', 'termino', 'demasiados']);
+const CODIGOS = new Set(['cancelada', 'vencida', 'sin-acceso', 'no-responde', 'invalida', 'termino', 'demasiados', 'solo']);
 
 /** Código del paquete (ErrorCuentas3G.codigo) → el aviso de la pantalla de entrada. */
 function codigoDePantalla(e) {
@@ -87,7 +90,7 @@ function crearCuentas3G(o) {
             if (!e.ultimoError && fallaba) anotar({ evento: 'lista', resultado: 'ok' });
             fallaba = !!e.ultimoError;
         };
-        anotar({ evento: 'config', resultado: 'ok', modo: config.modo, cliente: c3g.VERSION });
+        anotar({ evento: 'config', resultado: 'ok', modo: config.modo, cliente: c3g.VERSION, ...(config.modo === 'solo' ? { emergencia: config.emergencia } : {}) });
         // La última lista guardada (con su firma) y la primera consulta; después, cada minuto.
         listo = cliente.arrancar({ sinReloj: true }).then(revisar, revisar);
         reloj = setInterval(() => { cliente.listaDeVersiones({ forzar: true }).then(revisar, revisar); }, config.listaCadaMs);
@@ -99,6 +102,9 @@ function crearCuentas3G(o) {
     const llaveIda = crypto.createHmac('sha256', String(o.jwtSecret)).update('cuentas3g-ida-v1').digest('hex');
     const nombreIda = o.produccion ? '__Host-sitio_c3g_ida' : 'sitio_c3g_ida';
     const opcionesIda = { httpOnly: true, secure: !!o.produccion, sameSite: 'lax', path: '/' };
+
+    // WEB-04: en «solo» el acceso de siempre solo abre con la llave de emergencia puesta.
+    const emergenciaAbierta = config.modo === 'solo' && config.emergencia;
 
     const router = express.Router();
     // Apagado: estas rutas no existen (siguen a lo de siempre: el 404 de hoy o la página de siempre).
@@ -113,7 +119,7 @@ function crearCuentas3G(o) {
         fs.readFile(path.join(o.raizAdmin, 'login.html'), 'utf8', (err, html) => {
             if (err) return next(err);
             const pendiente = req.cookies && req.cookies[NOMBRE_AVISO];
-            let marca = ` data-c3g-modo="${config.modo}"`;
+            let marca = ` data-c3g-modo="${config.modo}"${emergenciaAbierta ? ' data-c3g-emergencia' : ''}`;
             if (pendiente !== undefined) {
                 if (CODIGOS.has(pendiente)) marca += ` data-c3g-aviso="${pendiente}"`;
                 res.clearCookie(NOMBRE_AVISO, opcionesAviso);
@@ -206,6 +212,12 @@ function crearCuentas3G(o) {
      */
     function revisarSesion(decoded) {
         if (!activo || !decoded || typeof decoded !== 'object') return null;
+        // WEB-04 · «solo»: solo valen las sesiones de Cuentas 3G (y las de emergencia mientras la llave esté puesta).
+        // Las del acceso de siempre (también las de 30 días con «Mantener sesión iniciada») dejan de valer.
+        if (config.modo === 'solo' && decoded.via !== 'cuentas3g' && !(decoded.via === 'emergencia' && emergenciaAbierta)) {
+            anotar({ evento: 'sesion-cortada', motivo: decoded.via === 'emergencia' ? 'emergencia-cerrada' : 'solo' });
+            return { codigo: 'solo', texto: 'El acceso de siempre ya no se usa: entra con tu cuenta 3G.' };
+        }
         // WEB-03: si la cookie trae sub y ver (o dice venir de Cuentas 3G), se revisa contra la lista y los avisos.
         const es3G = decoded.via === 'cuentas3g' || decoded.sub !== undefined || decoded.ver !== undefined;
         if (!es3G) return null; // la cookie del acceso de siempre no cambia
@@ -224,6 +236,7 @@ function crearCuentas3G(o) {
             if (config.pedido === 'apagado') return null;
             const base = { id: 'cuentas3g', nombre: 'Entrada con cuenta 3G' };
             if (!activo) return { ...base, estado: 'aviso', mensaje: 'Configuración incompleta: sigue solo el acceso de siempre' };
+            if (emergenciaAbierta) return { ...base, estado: 'aviso', mensaje: 'Llave de emergencia puesta: el acceso de siempre está abierto (solo Dirección). Quitarla cuando Cuentas 3G responda' };
             const e = cliente.estado();
             if (!e.lista) return { ...base, estado: 'aviso', mensaje: 'Todavía no llega la lista de versiones de Cuentas 3G' };
             const recibida = Date.parse(e.lista.en) || 0;
@@ -244,11 +257,22 @@ function crearCuentas3G(o) {
         res.cookie(NOMBRE_AVISO, corte.codigo, { ...opcionesAviso, maxAge: 5 * 60 * 1000 });
     }
 
+    /**
+     * WEB-04 · ¿Abre el acceso de siempre (/api/login)? Apagado y «ambos»: sí, como hoy. «solo»: solo con la llave de
+     * emergencia; entonces la cookie lleva via «emergencia» y dura 24 h (server.js).
+     */
+    function entradaDeSiempre() {
+        if (config.modo !== 'solo') return { abierta: true, emergencia: false };
+        return { abierta: emergenciaAbierta, emergencia: emergenciaAbierta };
+    }
+
     return {
         router,
         modo: config.modo,
         revisarSesion,
         cerrarSesion,
+        entradaDeSiempre,
+        anotar,
         salud,
         /** Para pruebas: la primera lista (guardada y de Cuentas 3G) ya se intentó. */
         listo: () => listo,

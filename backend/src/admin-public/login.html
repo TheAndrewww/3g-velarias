@@ -119,6 +119,16 @@
         [data-diseno="3g"][data-c3g-modo] .c3g-aviso[data-tipo="mal"] { border-left-color: var(--g3-mal); background: var(--g3-mal-suave); color: var(--g3-mal); }
         [data-diseno="3g"][data-c3g-modo] .g3a-login #submitBtn.btn-primary { background: transparent; color: var(--g3-primario); border: 1px solid var(--g3-linea-fuerte); box-shadow: none; }
         [data-diseno="3g"][data-c3g-modo] .g3a-login #submitBtn.btn-primary:hover { background: var(--g3-primario-tinte); }
+        /* WEB-04 · «solo»: el acceso de siempre se esconde; con la llave de emergencia vuelve, con su aviso. */
+        html[data-c3g-modo="solo"]:not([data-c3g-emergencia]) #loginForm,
+        html[data-c3g-modo="solo"]:not([data-c3g-emergencia]) #c3g-separador { display: none !important; }
+        html:not([data-c3g-modo="solo"]) .c3g-solo-si,
+        html[data-c3g-modo="solo"][data-c3g-emergencia] .c3g-sin-emergencia,
+        html[data-c3g-modo="solo"]:not([data-c3g-emergencia]) .c3g-con-emergencia { display: none !important; }
+        html[data-c3g-modo="solo"] #loginForm div:has(> div > #remember) { display: none; }
+        html[data-c3g-modo] .c3g-nota { margin: 14px 0 0; color: #6b7280; font-size: 0.8125rem; line-height: 1.45; text-align: center; }
+        html[data-c3g-modo] .c3g-emergencia { margin: 16px 0 0; }
+        [data-diseno="3g"][data-c3g-modo] .c3g-nota { color: var(--g3-tinta-2); font: 400 var(--g3-t-ch)/1.45 var(--g3-f-texto); }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4 g3a-login">
@@ -140,6 +150,9 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>
                 <span>Entrar con tu cuenta 3G</span>
             </a>
+            <!-- WEB-04 · «solo»: sin el acceso de siempre; con la llave de emergencia, el aviso de que está abierta. -->
+            <p id="c3g-solo-nota" class="c3g-nota c3g-solo-si c3g-sin-emergencia">El acceso con usuario y contraseña ya no se usa. Si no puedes entrar, pide acceso a Dirección.</p>
+            <div id="c3g-emergencia" class="c3g-aviso c3g-emergencia c3g-solo-si c3g-con-emergencia" data-tipo="mal" role="note">Llave de emergencia: el acceso de siempre está abierto solo para Dirección mientras Cuentas 3G no responde. Cada entrada queda registrada.</div>
             <p class="c3g-separador" id="c3g-separador"><span>o usa el acceso de siempre</span></p>
         </div>
 
@@ -358,14 +371,16 @@
         (function () {
             var d = document.documentElement;
             if (!d.hasAttribute('data-c3g-modo')) return;
+            var solo = d.getAttribute('data-c3g-modo') === 'solo' && !d.hasAttribute('data-c3g-emergencia');
             var textos = {
                 cancelada: ['info', 'Cancelaste la entrada con tu cuenta 3G.'],
                 vencida: ['mal', 'La entrada con tu cuenta 3G venció o se abrió en otra pestaña. Inténtalo de nuevo.'],
                 'sin-acceso': ['mal', 'Tu cuenta 3G no tiene acceso al Administrador del sitio. Pide acceso a Dirección.'],
-                'no-responde': ['mal', 'Cuentas 3G no responde. Inténtalo en unos minutos o usa el acceso de siempre.'],
+                'no-responde': ['mal', solo ? 'Cuentas 3G no responde. Inténtalo en unos minutos; si sigue igual, avisa a Dirección.' : 'Cuentas 3G no responde. Inténtalo en unos minutos o usa el acceso de siempre.'],
                 invalida: ['mal', 'No se pudo comprobar tu cuenta 3G. Inténtalo de nuevo.'],
                 termino: ['info', 'Tu sesión terminó porque tu acceso cambió en Cuentas 3G. Vuelve a entrar.'],
-                demasiados: ['mal', 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.']
+                demasiados: ['mal', 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.'],
+                solo: ['info', 'El acceso con usuario y contraseña ya no se usa: entra con tu cuenta 3G.']
             };
             var q = null, codigo = null;
             try { q = new URLSearchParams(location.search); codigo = q.get('c3g'); } catch (e) { /* nada */ }

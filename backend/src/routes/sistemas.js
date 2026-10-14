@@ -46,6 +46,8 @@ const BANDERAS = [
     { nombre: 'CONTACTO_A_VENTAS', encendida: (env) => banderaEncendida(env.CONTACTO_A_VENTAS) }, // WEB-05, contactos de la web a Ventas
     // WEB-03: encendida = la entrada con cuenta 3G de verdad corre (con configuración incompleta se queda apagada).
     { nombre: 'CUENTAS3G_MODO', encendida: (env) => leerConfigCuentas3G(env).modo !== 'apagado' },
+    // WEB-04: la llave de emergencia solo cuenta (y solo se dice encendida) con el sitio en «solo».
+    { nombre: 'CUENTAS3G_EMERGENCIA', encendida: (env) => { const c = leerConfigCuentas3G(env); return c.modo === 'solo' && c.emergencia; } },
 ];
 
 /** Fecha ISO con la zona de México (p. ej. 2026-10-15T10:00:00-06:00). */
