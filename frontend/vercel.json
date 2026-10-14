@@ -1,6 +1,16 @@
 {
   "cleanUrls": true,
   "trailingSlash": true,
+  "rewrites": [
+    {
+      "source": "/api/projects",
+      "destination": "https://3g-velarias-production.up.railway.app/api/projects"
+    },
+    {
+      "source": "/api/projects/",
+      "destination": "https://3g-velarias-production.up.railway.app/api/projects"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
