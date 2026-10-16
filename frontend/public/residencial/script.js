@@ -4,11 +4,21 @@
  */
 
 // Backend API URL configuration
-// En producción la API va en el mismo dominio: Vercel reenvía solo /api/projects al servidor del sitio
-// (reescritura en frontend/vercel.json). Así la dirección del servidor no vive en el código público.
+// En producción la API va en el mismo dominio: Vercel reenvía solo las rutas públicas (/api/projects y /api/contacto)
+// al servidor del sitio (reescritura en frontend/vercel.json). Así la dirección del servidor no vive en el código público.
 const API_BASE_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:3001'
     : '';
+
+// Contactos de la web al reparto de Ventas (WEB-05 · C12) ------------------------------------------------------
+// Número de WhatsApp de la página: el que entra al reparto de Ventas (decisión D-12). Solo dígitos, con el 52.
+// Es el único lugar donde se cambia en esta página: los botones de WhatsApp lo toman de aquí al cargar.
+const WHATSAPP_NUMERO = '524621490313';
+// Llave PÚBLICA de sitio de Cloudflare Turnstile (opcional, DUE-18). Vacía = sin Turnstile, como hoy.
+// La secreta va solo en el servidor del sitio (TURNSTILE_SECRETO): primero se publica esta y después se pone la secreta.
+const TURNSTILE_LLAVE_SITIO = '';
+// Desde cuándo está abierta la página (trampa contra robots: un envío instantáneo no llega a Ventas).
+const PAGINA_ABIERTA_EN = Date.now();
 
 // Helper function to get absolute image URL
 function getImageUrl(imagePath) {
@@ -166,6 +176,8 @@ async function loadProjectsFromAPI() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Botones de WhatsApp con su texto (no esperan a los proyectos)
+    initWhatsAppPrellenado();
     // Load projects first
     await loadProjectsFromAPI();
     // Initialize all modules
@@ -599,6 +611,8 @@ function initContactForm() {
 
     if (!form) return;
 
+    initTurnstile(form);
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -615,9 +629,13 @@ function initContactForm() {
         `;
         submitBtn.disabled = true;
 
+        // Copia al servidor del sitio para el reparto de Ventas (WEB-05). Sale aparte y no se espera: el correo no cambia.
+        enviarCopiaAlServidor(form);
+
         try {
             // Send form data using fetch
             const formData = new FormData(form);
+            formData.delete('cf-turnstile-response'); // el token de Turnstile (si lo hay) es solo para el servidor del sitio
             const response = await fetch(form.action, {
                 method: 'POST',
                 body: formData,
@@ -678,6 +696,84 @@ function initContactForm() {
             }
         });
     });
+}
+
+/**
+ * Contactos de la web al reparto de Ventas (WEB-05 · C12)
+ */
+// El tipo de proyecto que eligió en el formulario (texto visible), si ya eligió uno.
+function productoElegido() {
+    const sel = document.getElementById('service');
+    return sel && sel.value && sel.selectedIndex > 0 ? sel.options[sel.selectedIndex].text.trim() : '';
+}
+
+// Botones de WhatsApp: el número de la constante y un texto ya escrito con la página y el producto.
+function initWhatsAppPrellenado() {
+    const botones = document.querySelectorAll('a[href*="wa.me/"]');
+    if (!botones.length) return;
+    const poner = () => {
+        const producto = productoElegido();
+        const texto = 'Hola, vengo de la página Residencial de 3G Velarias y quiero información' + (producto ? ' sobre: ' + producto + '.' : '.');
+        const enlace = 'https://wa.me/' + WHATSAPP_NUMERO + '?text=' + encodeURIComponent(texto);
+        botones.forEach((a) => { a.href = enlace; });
+    };
+    poner();
+    // Al hacer clic se vuelve a armar, por si ya eligió el tipo de proyecto.
+    botones.forEach((a) => a.addEventListener('click', poner));
+    const sel = document.getElementById('service');
+    if (sel) sel.addEventListener('change', poner);
+}
+
+// Copia del formulario al servidor del sitio, que la pasa a Ventas (bandera CONTACTO_A_VENTAS en el servidor).
+// Nunca detiene, retrasa ni cambia el envío por correo (FormSubmit): si falla, no pasa nada.
+function enviarCopiaAlServidor(form) {
+    try {
+        const valor = (nombre, tope) => {
+            const el = form.querySelector('[name="' + nombre + '"]');
+            return el ? String(el.value || '').trim().slice(0, tope) : '';
+        };
+        const campania = {};
+        ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'gbraid', 'wbraid', 'landing_page'].forEach((k) => {
+            try { const v = sessionStorage.getItem(k); if (v) campania[k] = v.slice(0, 300); } catch (e) { }
+        });
+        if (document.referrer) campania.referente = document.referrer.slice(0, 300);
+        const cuerpo = {
+            pagina: 'residencial',
+            nombre: valor('name', 120),
+            telefono: valor('phone', 40),
+            correo: valor('email', 200),
+            mensaje: valor('message', 2000),
+            producto: productoElegido().slice(0, 80),
+            utm: campania,
+            trampa: valor('_honey', 500),
+            abierto: Date.now() - PAGINA_ABIERTA_EN,
+            turnstile: valor('cf-turnstile-response', 2048),
+        };
+        fetch(API_BASE_URL + '/api/contacto/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cuerpo),
+            keepalive: true, // sigue aunque la página ya se vaya a «¡Gracias!»
+            credentials: 'omit',
+        }).catch(() => { });
+    } catch (e) { /* la copia nunca estorba al correo */ }
+}
+
+// Turnstile de Cloudflare (opcional): solo con TURNSTILE_LLAVE_SITIO. Casi siempre no se ve («interaction-only»).
+function initTurnstile(form) {
+    if (!TURNSTILE_LLAVE_SITIO) return;
+    const caja = document.createElement('div');
+    caja.className = 'cf-turnstile-caja';
+    caja.style.margin = '0 0 12px';
+    form.insertBefore(caja, form.querySelector('button[type="submit"]'));
+    window.alCargarTurnstile3G = function () {
+        window.turnstile.render(caja, { sitekey: TURNSTILE_LLAVE_SITIO, appearance: 'interaction-only', size: 'flexible' });
+    };
+    const s = document.createElement('script');
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=alCargarTurnstile3G&render=explicit';
+    s.async = true;
+    s.defer = true;
+    document.head.appendChild(s);
 }
 
 /**
