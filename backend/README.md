@@ -28,7 +28,10 @@ FRONTEND_URL=http://...       # URL del frontend (CORS)
 BACKEND_URL=http://...        # URL de este backend
 ADMIN_USERNAME=admin          # Usuario del admin
 ADMIN_PASSWORD=changeme123    # Contraseña del admin
+SOFIA_URL=                    # Opcional: ventana flotante de Sofía en /admin (vacía = sin ventana)
 ```
+
+Pruebas: `npm test` (sin base de datos ni red).
 
 ## API Endpoints
 

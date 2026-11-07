@@ -84,9 +84,13 @@ app.use('/api/contacto', contacto.alFallarCuerpo);
 // «solo» (WEB-04): solo cuenta 3G; las cookies del acceso de siempre dejan de valer, salvo CUENTAS3G_EMERGENCIA.
 const cuentas3g = require('./cuentas3g')({ jwtSecret: SAFE_JWT_SECRET, produccion: NODE_ENV === 'production', raizAdmin: path.join(__dirname, 'admin-public') });
 
+// Sofía (ventana flotante de la asistente interna): bandera SOFIA_URL. Vacía (por omisión) = idéntico a hoy.
+// Con ella, /admin agrega <script src="<SOFIA_URL>/flotante.js" data-sistema="sitio" async>. Ver src/sofia.js.
+const sofia = require('./sofia')({ url: process.env.SOFIA_URL });
+
 // Puertas entre sistemas (WEB-02): /api/inicio3g/v1 y /api/sistemas/v1, con llave por origen (plan final §7.1).
 // Rutas nuevas y cerradas por omisión: sin LLAVE_ENTRANTE_<ORIGEN>_SHA256 responden 503 «puerta sin configurar».
-app.use(require('./routes/sistemas')({ prisma, version: require('../package.json').version, complementos: [contacto.salud, cuentas3g.salud] }));
+app.use(require('./routes/sistemas')({ prisma, version: require('../package.json').version, complementos: [contacto.salud, cuentas3g.salud, sofia.salud] }));
 app.use(cuentas3g.router);
 
 // Configure Multer for Image Uploads (memory storage — files go to Cloudinary, not disk)
@@ -441,7 +445,13 @@ app.get('/admin/login', (req, res) => {
 
 // Serve the Admin HTML at /admin (CON autenticación - usa requireAuth que redirige)
 app.get('/admin', requireAuth, (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin-public', 'index.html'));
+    const panel = path.join(__dirname, 'admin-public', 'index.html');
+    // Sofía: sin SOFIA_URL, el mismo sendFile de siempre. Con ella, la misma página con la etiqueta de la ventana flotante.
+    if (!sofia.activa) return res.sendFile(panel);
+    fs.readFile(panel, 'utf8', (err, html) => {
+        if (err) return res.sendFile(panel);
+        res.type('html').send(sofia.conVentana(html));
+    });
 });
 
 // Health check endpoint (sin autenticación)
