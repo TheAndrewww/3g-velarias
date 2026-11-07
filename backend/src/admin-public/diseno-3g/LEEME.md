@@ -7,11 +7,27 @@ Esta carpeta trae el paquete **Diseño 3G v1.1.0** copiado (vendorizado) desde `
 | `diseno-3g.css` | paquete v1.1.0, sin cambios (sha256 c28ef2683a9f8353…) | Tokens `--g3-*` y componentes `.g3-*`, todo bajo `html[data-diseno="3g"]`. |
 | `diseno-3g.js` | paquete v1.1.0, sin cambios (sha256 27b767ac4806205c…) | Interruptor, selector de apps, avisos, confirmar, íconos. |
 | `sistemas.json` | paquete v1.1.0, sin cambios (sha256 f4bac54ef921c330…) | Mismos datos que `G3.sistemas` (solo referencia). |
-| `admin-3g.css` | propio del administrador | Lista de obras, ficha en cajón, fotos, subida y entrada. Todo bajo el atributo. |
-| `admin-3g.js` | propio del administrador | Lo usa `app.js` solo con el interruptor encendido (`G3_ON`). |
+| `admin-3g.css` | propio del administrador | Rediseño 2: lista en tabla o galería, estados de la ficha, ficha en cajón ancho, fotos, subida y entrada. Todo bajo el atributo. |
+| `admin-3g.js` | propio del administrador | Lo usa `app.js` mientras el atributo esté puesto (`G3_ON`). No hace peticiones propias. |
 
-**Cómo se enciende:** abrir `/admin?diseno=3g` (se recuerda en ese navegador) o el interruptor "Diseño 3G" del panel de apps (9 puntos). `?diseno=actual` lo apaga.
-Apagado, el panel se ve y funciona exactamente como antes (comprobado con capturas píxel por píxel).
+## Rediseño 2 (nov-2026): diseño FIJO
+
+- `index.html` y `login.html` llevan `<html data-diseno="3g">` y el fragmento **fijo** (el mismo de Operación): el diseño nuevo
+  es el de todos; `?diseno=actual` y la preferencia vieja «actual» ya no regresan a lo viejo. El selector de apps va sin el
+  interruptor y la entrada ya no lo trae.
+- **Respaldo:** si `diseno-3g.js` o `admin-3g.js` no llegan, `app.js` quita el atributo y queda el panel de siempre (nunca una
+  mezcla). El marcado `.g3-no` y las ramas «apagado» de `app.js` son ese respaldo; se pueden borrar una semana después de
+  publicar, como en los demás sistemas.
+- **Lista:** tabla con miniatura, obra (título y ciudad), categoría, área y duración, globo 3D (Industrial), ficha y acciones.
+  En anchos medianos lo que no cabe pasa debajo del nombre; en celular cada obra es un renglón. **Galería** como segunda vista
+  (se recuerda en el navegador, `admin-sitio-vista`).
+- **Estados de la ficha** (solo de la vista, sin peticiones): Todas · Por completar · En el globo 3D · Fuera del globo.
+- **Ficha:** cajón ancho con Datos de la obra | Fotos y, en Industrial, Ubicación en el mapa y globo 3D abajo. Mismos campos,
+  mismos nombres y el mismo `saveProject`.
+- **Sofía:** con la variable `SOFIA_URL` en el servidor, `/admin` agrega su ventana flotante (`src/sofia.js`). Sin ella, nada.
+- Comprobado: las 18 acciones del guion de peticiones mandan lo mismo que hoy (ruta, método, cuerpo, número y orden).
+
+Antes del rediseño 2 se encendía con `/admin?diseno=3g` o el interruptor «Diseño 3G»; apagado se veía el panel de siempre.
 
 Para actualizar el paquete: copia de nuevo los tres archivos del paquete y revisa la primera línea (versión).
 
