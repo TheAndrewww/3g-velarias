@@ -4,7 +4,7 @@ Esta carpeta trae el paquete **Diseño 3G v1.1.0** copiado (vendorizado) desde `
 
 | Archivo | Origen | Nota |
 |---|---|---|
-| `diseno-3g.css` | paquete v1.1.0, sin cambios (sha256 c28ef2683a9f8353…) | Tokens `--g3-*` y componentes `.g3-*`, todo bajo `html[data-diseno="3g"]`. |
+| `diseno-3g.css` | paquete v1.1.0 + marca de **v1.2.0 (marca original) 7-nov-2026** (sha256 26426b801fc4db13…) | Tokens `--g3-*` y componentes `.g3-*`, todo bajo `html[data-diseno="3g"]`. |
 | `diseno-3g.js` | paquete v1.1.0, sin cambios (sha256 27b767ac4806205c…) | Interruptor, selector de apps, avisos, confirmar, íconos. |
 | `sistemas.json` | paquete v1.1.0, sin cambios (sha256 f4bac54ef921c330…) | Mismos datos que `G3.sistemas` (solo referencia). |
 | `admin-3g.css` | propio del administrador | Rediseño 2: lista en tabla o galería, estados de la ficha, ficha en cajón ancho, fotos, subida y entrada. Todo bajo el atributo. |
@@ -30,6 +30,15 @@ Esta carpeta trae el paquete **Diseño 3G v1.1.0** copiado (vendorizado) desde `
 Antes del rediseño 2 se encendía con `/admin?diseno=3g` o el interruptor «Diseño 3G»; apagado se veía el panel de siempre.
 
 Para actualizar el paquete: copia de nuevo los tres archivos del paquete y revisa la primera línea (versión).
+
+## Marca: v1.2.0 (marca original) 7-nov-2026
+
+- En `diseno-3g.css` cambiaron solo dos cosas, copiadas del paquete: la regla `.g3-logo-marca` ahora dibuja el **isologo
+  original** de 3G (letras blancas y el cuadro rojo #BE202E) incrustado sobre un cuadro oscuro #111614, con el texto «3G» del
+  HTML solo para lectores de pantalla; y el token claro `--g3-rojo-3g` pasa de #c4122f a **#be202e** (el oscuro #d9203d no
+  cambia). El riel y la barra de celular del panel ya usaban `.g3-logo-marca`.
+- Icono de pestaña de `index.html` y `login.html`: `/admin/icono-oscuro.svg` (de `Plataforma-3G/diseno-3g/marca/`). Antes el
+  panel usaba un emoji y la entrada no tenía. El logotipo de la entrada (`assets/residencial/logo.svg`) no cambió.
 
 ## Diseño 3G v1.1.0 (12-oct-2026): qué cambió para este sistema
 
