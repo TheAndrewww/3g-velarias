@@ -1,11 +1,17 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-diseno="3g">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Diseño 3G: interruptor (va antes de cualquier CSS para que no parpadee). Apagado = el panel de siempre. -->
-    <style>:root:not([data-diseno='3g']) .g3-si{display:none!important}</style><script>(function(d,k){try{var x=d.hasAttribute('data-g3-excluir'),r=window.G3_RUTAS_SIN_DISENO||[],p=location.pathname,i,s;for(i=0;i<r.length&&!x;i++){s=r[i];x=s instanceof RegExp?s.test(p):(s=String(s),s.slice(-1)==='/'&&(s=s.slice(0,-1)),p===s||p.indexOf(s+'/')===0)}if(x){d.removeAttribute('data-diseno');return}var q=new URLSearchParams(location.search).get('diseno');if(q==='3g'||q==='actual')localStorage.setItem(k,q);else q=localStorage.getItem(k);if(q==='3g'){d.setAttribute('data-diseno','3g');var t=localStorage.getItem(k+'-tema');if(/^(auto|claro|oscuro)$/.test(t))d.setAttribute('data-g3-tema',t)}else if(q==='actual')d.removeAttribute('data-diseno')}catch(e){}})(document.documentElement,'diseno-3g')</script>
+    <!-- Diseño 3G FIJO (rediseño 2, nov-2026): el panel se ve SOLO con el diseño nuevo. html[data-diseno="3g"] va fijo en la
+         etiqueta html y el fragmento lo vuelve a poner antes de pintar; ?diseno=actual ya no regresa a lo viejo y el tema
+         elegido se respeta (mismo fragmento fijo que Operación). Si el paquete no cargara, app.js quita el atributo y queda
+         el panel de siempre (nunca una mezcla). VIEJO: el marcado .g3-no y las ramas «apagado» de app.js se pueden borrar
+         una semana después de publicar, como en los demás sistemas. -->
+    <style>:root:not([data-diseno='3g']) .g3-si{display:none!important}</style><script>(function(d,k){d.setAttribute('data-diseno','3g');try{var u=new URL(location.href);if(u.searchParams.has('diseno')){u.searchParams.delete('diseno');history.replaceState(history.state,'',u.pathname+u.search+u.hash)}if(localStorage.getItem(k)==='actual')localStorage.removeItem(k);var t=localStorage.getItem(k+'-tema');if(/^(auto|claro|oscuro)$/.test(t))d.setAttribute('data-g3-tema',t)}catch(e){}})(document.documentElement,'diseno-3g')</script>
+    <!-- Sin parpadeo: mientras admin-3g.js no mete el contenido en el armazón, no se pinta suelto. Solo estilo. -->
+    <style>html[data-diseno='3g'] body>#admin-contenido{visibility:hidden}</style>
     <!-- Diseño 3G en el administrador: sin tema elegido, sigue el tema de la computadora. -->
     <script>(function(d){if(d.getAttribute('data-diseno')==='3g'&&!d.hasAttribute('data-g3-tema'))d.setAttribute('data-g3-tema','auto')})(document.documentElement)</script>
     <title>Panel de Administración | 3G Velarias</title>
@@ -200,29 +206,32 @@
         </div>
     </header>
 
-    <!-- Diseño 3G: armazón común de todos los sistemas (riel, barra superior y, en celular, barra inferior).
-         Solo con el interruptor encendido; admin-3g.js mete aquí el contenido (#admin-contenido) sin copiarlo. -->
-    <div class="g3-si g3-marco g3a-marco" id="g3-marco">
-        <nav class="g3-riel g3a-riel" id="g3-riel" aria-label="Menú del administrador del sitio">
-            <div class="g3a-riel-cab">
+    <!-- Diseño 3G · rediseño 2: armazón común de todos los sistemas (riel, barra superior y, en celular, barra inferior).
+         admin-3g.js mete aquí el contenido (#admin-contenido) sin copiarlo: los mismos nodos, ids y manejadores. -->
+    <div class="g3-si g3-marco r2a-marco" id="g3-marco">
+        <nav class="g3-riel r2a-riel" id="g3-riel" aria-label="Menú del administrador del sitio">
+            <div class="r2a-riel-cab">
                 <a class="g3-logo" href="/admin" aria-label="Administrador del sitio 3G: inicio">
                     <span class="g3-logo-marca" aria-hidden="true">3G</span>
-                    <span class="g3a-logo-texto"><span>Administrador del sitio</span><small>www.3gvelarias.com</small></span>
+                    <span class="r2a-logo-texto"><span>Administrador del sitio</span><small>www.3gvelarias.com</small></span>
                 </a>
-                <button class="g3-btn-icono g3a-solo-movil" type="button" data-g3-cierra aria-label="Cerrar el menú" title="Cerrar el menú"><i data-g3-icono="cerrar"></i></button>
+                <button class="g3-btn-icono r2a-solo-movil" type="button" data-g3-cierra aria-label="Cerrar el menú" title="Cerrar el menú"><i data-g3-icono="cerrar"></i></button>
             </div>
             <div class="g3-riel-grupo" id="g3-riel-portafolio">Portafolio</div>
-            <div class="g3a-riel-lista" role="group" aria-labelledby="g3-riel-portafolio">
-                <button class="g3-riel-item" type="button" id="g3-riel-residential" data-g3a-pestana="residential" aria-current="page"><i data-g3-icono="inicio"></i>Residencial<span class="g3-insignia g3-insignia--neutra" id="g3-n-residential" aria-label="0 obras">0</span></button>
-                <button class="g3-riel-item" type="button" id="g3-riel-industrial" data-g3a-pestana="industrial"><i data-g3-icono="planta"></i>Industrial<span class="g3-insignia g3-insignia--neutra" id="g3-n-industrial" aria-label="0 obras">0</span></button>
+            <div class="r2a-riel-lista" role="group" aria-labelledby="g3-riel-portafolio">
+                <button class="g3-riel-item" type="button" id="g3-riel-residential" data-g3a-pestana="residential" aria-current="page"><i data-g3-icono="inicio"></i>Residencial<span class="g3-insignia g3-insignia--neutra" id="g3-n-residential"></span></button>
+                <button class="g3-riel-item" type="button" id="g3-riel-industrial" data-g3a-pestana="industrial"><i data-g3-icono="planta"></i>Industrial<span class="g3-insignia g3-insignia--neutra" id="g3-n-industrial"></span></button>
             </div>
-            <div class="g3-riel-grupo">Sitio público</div>
-            <a class="g3-riel-item" id="g3-ver-sitio" href="#" target="_blank" rel="noopener" aria-label="Ver el sitio Residencial en otra pestaña"><i data-g3-icono="externo"></i><span id="g3-ver-sitio-texto">Ver sitio Residencial</span></a>
-            <div class="g3-riel-pie"><span class="g3-chico">Lo que guardas aquí sale en www.3gvelarias.com.</span></div>
+            <div class="g3-riel-grupo" id="g3-riel-sitio">Sitio público</div>
+            <div class="r2a-riel-lista" role="group" aria-labelledby="g3-riel-sitio">
+                <a class="g3-riel-item" id="g3-ver-residencial" href="#" target="_blank" rel="noopener" aria-label="Abrir la página Residencial en otra pestaña"><i data-g3-icono="externo"></i>Página Residencial</a>
+                <a class="g3-riel-item" id="g3-ver-industrial" href="#" target="_blank" rel="noopener" aria-label="Abrir la página Industrial en otra pestaña"><i data-g3-icono="externo"></i>Página Industrial</a>
+            </div>
+            <div class="g3-riel-pie"><span class="g3-chico">Lo que guardas aquí sale en www.3gvelarias.com al momento.</span></div>
         </nav>
         <div class="g3-columna">
-            <header class="g3-barra g3a-barra">
-                <button class="g3-btn-icono g3a-solo-movil" type="button" data-g3-abre="#g3-riel" aria-controls="g3-riel" aria-label="Abrir el menú" title="Abrir el menú"><i data-g3-icono="menu"></i></button>
+            <header class="g3-barra r2a-barra">
+                <button class="g3-btn-icono r2a-solo-movil" type="button" data-g3-abre="#g3-riel" aria-controls="g3-riel" aria-label="Abrir el menú" title="Abrir el menú"><i data-g3-icono="menu"></i></button>
                 <a class="g3-logo g3-logo--movil" href="/admin" aria-label="Administrador del sitio 3G: inicio"><span class="g3-logo-marca" aria-hidden="true">3G</span></a>
                 <span class="g3-barra-titulo">Portafolio</span>
                 <div class="g3-barra-acciones">
@@ -233,12 +242,12 @@
                     </button>
                 </div>
             </header>
-            <main class="g3-principal g3a-principal" id="g3-principal"></main>
+            <main class="g3-principal r2a-principal" id="g3-principal"></main>
         </div>
         <nav class="g3-barra-inferior" aria-label="Navegación principal">
             <button type="button" data-g3a-pestana="residential" aria-current="page"><i data-g3-icono="inicio"></i>Residencial</button>
             <button type="button" data-g3a-pestana="industrial"><i data-g3-icono="planta"></i>Industrial</button>
-            <a id="g3-ver-sitio-inferior" href="#" target="_blank" rel="noopener" aria-label="Ver el sitio Residencial en otra pestaña"><i data-g3-icono="externo"></i>Sitio</a>
+            <a id="g3-ver-sitio-inferior" href="#" target="_blank" rel="noopener" aria-label="Abrir la página Residencial en otra pestaña"><i data-g3-icono="externo"></i>Sitio</a>
             <button type="button" data-g3-abre="#g3-riel" aria-controls="g3-riel"><i data-g3-icono="menu"></i>Más</button>
         </nav>
     </div>
@@ -246,34 +255,35 @@
     <div id="admin-contenido" class="container mx-auto px-6 py-8">
 
 
-        <!-- Diseño 3G: encabezado y filtros del portafolio (solo con el interruptor encendido; Residencial e Industrial están en el riel) -->
-        <div class="g3-si g3a-encabezado">
-            <div class="g3-cab">
-                <div>
-                    <nav class="g3-miga" aria-label="Ruta"><span>Portafolio</span><span aria-hidden="true">›</span><span id="g3-miga-sitio">Residencial</span></nav>
-                    <h1 id="g3-titulo">Obras residenciales</h1>
-                    <p id="g3-titulo-texto">Las obras de la galería de la página Residencial de www.3gvelarias.com. Toca una obra para editar sus datos, fotos y ubicación.</p>
-                </div>
-                <div class="g3-cab-acciones">
-                    <button class="g3-btn g3-btn--primario g3a-cab-agregar" type="button" onclick="openModal()"><i data-g3-icono="mas"></i>Agregar obra</button>
-                </div>
+        <!-- Diseño 3G · rediseño 2: encabezado, estado de las fichas y filtros (Residencial e Industrial están en el riel) -->
+        <div class="g3-si r2a-cab">
+            <div class="r2a-cab-texto">
+                <nav class="g3-miga" aria-label="Ruta"><span>Portafolio</span><span aria-hidden="true">›</span><span id="g3-miga-sitio">Residencial</span></nav>
+                <h1 id="g3-titulo">Obras residenciales</h1>
+                <p id="g3-titulo-texto">La galería de la página Residencial de www.3gvelarias.com. Lo que guardas aquí se publica al momento.</p>
             </div>
-            <div id="g3-incompletas" class="g3-caja g3-caja--aviso hidden">
-                <i data-g3-icono="alerta"></i>
-                <div class="g3-caja-cuerpo"><b id="g3-incompletas-titulo">Obras con la ficha incompleta</b><p id="g3-incompletas-texto"></p></div>
-                <div class="g3-caja-acciones"><button class="g3-btn g3-btn--ch" type="button" id="g3-ver-incompletas">Ver solo esas</button></div>
-            </div>
-            <div class="g3a-filtros">
-                <div class="g3-busca">
-                    <i data-g3-icono="buscar"></i>
-                    <input type="search" id="g3-buscar" placeholder="Buscar por título, ciudad o descripción" aria-label="Buscar obras" autocomplete="off">
-                </div>
-                <button class="g3-btn g3-btn--fantasma g3-btn--ch" type="button" id="g3-limpiar" onclick="clearFilters()"><i data-g3-icono="cerrar"></i>Limpiar filtros</button>
-            </div>
-            <div class="g3-chips" id="g3-categorias" role="group" aria-label="Filtrar por categoría"></div>
-            <p class="g3-tenue g3-chico g3a-conteo" id="g3-conteo" aria-live="polite"></p>
+            <button class="g3-btn g3-btn--primario r2a-agregar" type="button" onclick="openModal()"><i data-g3-icono="mas"></i>Agregar obra</button>
         </div>
 
+        <div class="g3-si r2a-estados-fila">
+            <div class="g3-pestanas r2a-estados" id="g3-estados" role="group" aria-label="Ver obras por estado de la ficha"></div>
+            <div class="g3-segmentado r2a-vista" role="group" aria-label="Cómo ver las obras">
+                <button type="button" data-vista="lista" aria-pressed="true" title="Ver como lista"><i data-g3-icono="lista"></i><span class="r2a-vista-texto">Lista</span></button>
+                <button type="button" data-vista="galeria" aria-pressed="false" title="Ver como galería de fotos"><i data-g3-icono="tablero"></i><span class="r2a-vista-texto">Galería</span></button>
+            </div>
+        </div>
+
+        <div class="g3-si r2a-filtros">
+            <div class="g3-busca r2a-busca">
+                <i data-g3-icono="buscar"></i>
+                <input type="search" id="g3-buscar" placeholder="Buscar por título, ciudad o descripción" aria-label="Buscar obras" autocomplete="off">
+            </div>
+            <div class="g3-chips r2a-categorias" id="g3-categorias" role="group" aria-label="Filtrar por categoría"></div>
+        </div>
+        <div class="g3-si r2a-conteo-fila">
+            <p class="r2a-conteo" id="g3-conteo" aria-live="polite"></p>
+            <button class="g3-btn g3-btn--fantasma g3-btn--ch hidden" type="button" id="g3-limpiar" onclick="clearFilters()"><i data-g3-icono="cerrar"></i>Quitar filtros</button>
+        </div>
         <!-- Tabs -->
         <div class="flex space-x-4 mb-8 border-b border-gray-200 g3-no">
             <button id="tab-residential"

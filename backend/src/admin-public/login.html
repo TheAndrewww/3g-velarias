@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-diseno="3g">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Diseño 3G: interruptor (va antes de cualquier CSS para que no parpadee). Apagado = la pantalla de siempre. -->
-    <style>:root:not([data-diseno='3g']) .g3-si{display:none!important}</style><script>(function(d,k){try{var x=d.hasAttribute('data-g3-excluir'),r=window.G3_RUTAS_SIN_DISENO||[],p=location.pathname,i,s;for(i=0;i<r.length&&!x;i++){s=r[i];x=s instanceof RegExp?s.test(p):(s=String(s),s.slice(-1)==='/'&&(s=s.slice(0,-1)),p===s||p.indexOf(s+'/')===0)}if(x){d.removeAttribute('data-diseno');return}var q=new URLSearchParams(location.search).get('diseno');if(q==='3g'||q==='actual')localStorage.setItem(k,q);else q=localStorage.getItem(k);if(q==='3g'){d.setAttribute('data-diseno','3g');var t=localStorage.getItem(k+'-tema');if(/^(auto|claro|oscuro)$/.test(t))d.setAttribute('data-g3-tema',t)}else if(q==='actual')d.removeAttribute('data-diseno')}catch(e){}})(document.documentElement,'diseno-3g')</script>
+    <!-- Diseño 3G FIJO (rediseño 2, nov-2026): la entrada se ve SOLO con el diseño nuevo, igual que el panel (ver index.html).
+         Si el paquete no cargara, queda la entrada de siempre con sus clases de Tailwind. -->
+    <style>:root:not([data-diseno='3g']) .g3-si{display:none!important}</style><script>(function(d,k){d.setAttribute('data-diseno','3g');try{var u=new URL(location.href);if(u.searchParams.has('diseno')){u.searchParams.delete('diseno');history.replaceState(history.state,'',u.pathname+u.search+u.hash)}if(localStorage.getItem(k)==='actual')localStorage.removeItem(k);var t=localStorage.getItem(k+'-tema');if(/^(auto|claro|oscuro)$/.test(t))d.setAttribute('data-g3-tema',t)}catch(e){}})(document.documentElement,'diseno-3g')</script>
     <script>(function(d){if(d.getAttribute('data-diseno')==='3g'&&!d.hasAttribute('data-g3-tema'))d.setAttribute('data-g3-tema','auto')})(document.documentElement)</script>
     <!-- Cuenta 3G (WEB-03): solo si el servidor pone el atributo data-c3g-modo (CUENTAS3G_MODO). Apagado no se ve nada nuevo. -->
     <style>html:not([data-c3g-modo]) .c3g-si{display:none!important}</style>
@@ -261,8 +262,6 @@
             </p>
         </div>
 
-        <!-- Diseño 3G: interruptor para volver al diseño de siempre (solo con el interruptor encendido) -->
-        <div class="g3-si g3a-login-interruptor" id="g3-interruptor-login"></div>
     </div>
 
     <script>
@@ -347,12 +346,12 @@
         // Auto-focus username input
         document.getElementById('username').focus();
     </script>
-    <!-- Diseño 3G: paquete y detalles de esta pantalla. Apagado no hace nada. -->
+    <!-- Diseño 3G: paquete y detalles de esta pantalla. -->
     <script src="/admin/diseno-3g/diseno-3g.js"></script>
     <script>
         (function () {
+            // Sin el interruptor «Diseño 3G»: desde el rediseño 2 el diseño es fijo.
             if (!(window.G3 && G3.activo())) return;
-            G3.interruptor('#g3-interruptor-login', { bloque: true });
             var ojo = document.getElementById('togglePassword');
             var clave = document.getElementById('password');
             var etiquetar = function () {
