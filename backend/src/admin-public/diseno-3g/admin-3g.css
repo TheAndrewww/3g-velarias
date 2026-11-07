@@ -385,7 +385,7 @@
 /* ---------- Ventana de subida de fotos ---------- */
 [data-diseno="3g"] .r2a-subida { position: fixed; inset: 0; z-index: 950; display: grid; place-items: center; padding: 16px; background: var(--g3-velo); }
 [data-diseno="3g"] .r2a-subida-caja {
-  display: flex; flex-direction: column; width: min(480px, 100%); max-height: min(88dvh, 640px); overflow: hidden;
+  display: flex; flex-direction: column; width: min(480px, 100%); max-height: min(88vh, 640px); max-height: min(88dvh, 640px); overflow: hidden;
   background: var(--g3-superficie); border: 1px solid var(--g3-linea); border-radius: var(--g3-r-hoja); box-shadow: var(--g3-sombra-3); color: var(--g3-tinta);
 }
 [data-diseno="3g"] .r2a-subida-lista { max-height: 300px; overflow-y: auto; }
