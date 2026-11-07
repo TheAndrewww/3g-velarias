@@ -42,6 +42,19 @@ test('la base con ruta se respeta y se quitan las diagonales del final', () => {
     assert.equal(s.origen, 'https://ejemplo.test');
     const local = crearSofia({ url: 'http://127.0.0.1:3362', anotar: callado });
     assert.match(local.etiqueta, /src="http:\/\/127\.0\.0\.1:3362\/flotante\.js"/);
+    assert.equal(crearSofia({ url: 'http://localhost:3362', anotar: callado }).activa, true);
+});
+
+test('http:// solo en la misma máquina: hacia otra, el navegador lo bloquearía en el panel HTTPS', () => {
+    for (const url of ['http://sofia.ejemplo.test', 'http://192.0.2.10:8080', 'http://ejemplo.test/sofia']) {
+        const avisos = [];
+        const s = crearSofia({ url, anotar: (m) => avisos.push(m) });
+        assert.equal(s.activa, false, url);
+        assert.equal(s.conVentana(PANEL), PANEL, url);
+        assert.equal(avisos.length, 1, url);
+        assert.match(avisos[0], /https/, url);
+        assert.equal(s.salud.pieza().estado, 'aviso', url);
+    }
 });
 
 test('una SOFIA_URL mal escrita no enciende nada y lo avisa', () => {

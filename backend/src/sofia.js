@@ -1,6 +1,8 @@
 // Ventana flotante de Sofía (la asistente interna de 3G) en el administrador del sitio.
 //
 // Bandera SOFIA_URL: la dirección base del servicio de Sofía (https://…). Vacía o mal escrita = idéntico a hoy:
+// (http:// solo se acepta en la misma máquina, 127.0.0.1 o localhost, para pruebas: el panel va por HTTPS y el
+// navegador bloquearía sin avisar un guion http, mientras /salud diría «Encendida». Misma regla que Finanzas.)
 // /admin se manda con el mismo sendFile de siempre y no se pide nada nuevo. Con ella, el servidor agrega al final del
 // <body> del panel UNA etiqueta:
 //
@@ -19,13 +21,16 @@ function escaparAtributo(texto) {
     return String(texto).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-// Solo http(s), sin usuario ni contraseña en la dirección, sin «?» ni «#». Devuelve la base sin «/» al final, o null.
+const LOCAL = new Set(['127.0.0.1', 'localhost', '[::1]']);
+
+// Solo https (http solo en 127.0.0.1 o localhost), sin usuario ni contraseña en la dirección, sin «?» ni «#».
+// Devuelve la base sin «/» al final, o null.
 function leerBase(valor) {
     const texto = String(valor == null ? '' : valor).trim();
     if (!texto) return null;
     let u;
     try { u = new URL(texto); } catch (e) { return null; }
-    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+    if (u.protocol !== 'https:' && !(u.protocol === 'http:' && LOCAL.has(u.hostname))) return null;
     if (u.username || u.password || u.search || u.hash) return null;
     return { base: (u.origin + u.pathname).replace(/\/+$/, ''), origen: u.origin };
 }
@@ -39,7 +44,7 @@ function leerBase(valor) {
 function crearSofia({ url, sistema = SISTEMA, anotar = (m) => console.warn(m) } = {}) {
     const leida = leerBase(url);
     const pedida = String(url == null ? '' : url).trim() !== '';
-    if (pedida && !leida) anotar('⚠️  SOFIA_URL no es una dirección http(s) válida: el administrador sigue sin la ventana de Sofía.');
+    if (pedida && !leida) anotar('⚠️  SOFIA_URL debe ser https:// (http solo en 127.0.0.1 o localhost, para pruebas): el administrador sigue sin la ventana de Sofía.');
 
     const etiqueta = leida
         ? `<script src="${escaparAtributo(leida.base + '/flotante.js')}" data-sistema="${escaparAtributo(sistema)}" async></script>`
@@ -61,7 +66,7 @@ function crearSofia({ url, sistema = SISTEMA, anotar = (m) => console.warn(m) } 
             const base = { id: 'sofia', nombre: 'Ventana de Sofía' };
             return leida
                 ? { ...base, estado: 'ok', mensaje: 'Encendida en el administrador' }
-                : { ...base, estado: 'aviso', mensaje: 'SOFIA_URL no es una dirección válida: la ventana no se carga' };
+                : { ...base, estado: 'aviso', mensaje: 'SOFIA_URL no es una dirección https válida: la ventana no se carga' };
         },
     };
 
